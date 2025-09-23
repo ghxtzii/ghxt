@@ -1,0 +1,660 @@
+-- Services
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local Debris = game:GetService("Debris")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- Load Criminality UI (source used previously in conversation)
+local ok, library = pcall(function()
+    return loadstring(game:HttpGet('https://raw.githubusercontent.com/cueshut/saves/main/criminality%20paste%20ui%20library'))()
+end)
+if not ok or not library then
+    warn("Could not load Criminality UI library. Make sure URL is accessible.")
+    return
+end
+
+-- Theme & Save managers (kept from previous structure)
+local repo = 'https://raw.githubusercontent.com/VardySc/Pornhub/main/'
+local thememanager = (pcall(function() return loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))() end) and loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()) or nil
+local savemanager = (pcall(function() return loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))() end) and loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()) or nil
+
+-- Rename global namespace to OBLIV
+getgenv().OBLIV = getgenv().OBLIV or {}
+
+-- Default settings preserved from ZenithFX (renamed)
+local O = getgenv().OBLIV
+
+O.Settings = O.Settings or { Smoothness = 0.1 }
+O.Camlock = O.Camlock or { enabled = false, resolver = false, Prediction = 0.1, HitPart = "HumanoidRootPart", target = nil }
+O.Targetaim = O.Targetaim or { enabled = false, target = nil, Prediction = 0.1, HitPart = "HumanoidRootPart", Method = "Namecall" }
+O.AutoAir = O.AutoAir or { enabled = false, jumpOffset = 0.8, delay = 0.1, AirPart = "RightFoot" }
+
+-- Crosshair / circle / esp / hit / orbit etc.
+getgenv().OBLIVCross = getgenv().OBLIVCross or {
+    enabled = false, radius = 11, color = Color3.fromRGB(255,255,255),
+    mode = "center", spin = true, spin_speed = 120, length = 10, width = 1.5
+}
+O.Circle = getgenv().OBLIVCircle or { enabled = false, color = Color3.fromRGB(255,255,255), radius = 100 }
+
+O.ESP = O.ESP or { box = false, tracer = false }
+O.hit = O.hit or { detection = true, logs = true, notify_duration = 1, sound_enabled = true, sound_id = "Neverlose", sound_volume = 1 }
+
+-- Hit sounds table preserved exactly (IDs from ZenithFX)
+local HitSoundId = {
+    Bameware = "rbxassetid://3124331820",
+    Neverlose = "rbxassetid://6534948092",
+    Bell = "rbxassetid://6534947240",
+    Bubble = "rbxassetid://6534947588",
+    Pick = "rbxassetid://1347140027",
+    Pop = "rbxassetid://198598793",
+    Rust = "rbxassetid://1255040462",
+    Sans = "rbxassetid://3188795283",
+    Fart = "rbxassetid://130833677",
+    Big = "rbxassetid://5332005053",
+    Vine = "rbxassetid://5332680810",
+    Bruh = "rbxassetid://4578740568",
+    Skeet = "rbxassetid://5633695679",
+    Fatality = "rbxassetid://6534947869",
+    Bonk = "rbxassetid://5766898159",
+    Minecraft = "rbxassetid://4018616850"
+}
+local hitSoundsNames = {"Bameware","Neverlose","Bell","Bubble","Pick","Pop","Rust","Sans","Fart","Big","Vine","Bruh","Skeet","Fatality","Bonk","Minecraft"}
+
+-- Orbit settings
+O.orbit = O.orbit or { enabled = false, distance = 10, height = 5, speed = 60, angle = 0 }
+
+-- CFrame exploit
+getgenv().cframe = getgenv().cframe or { settings = { enabled = true, showbutton = true, speed = 1 } }
+
+-- Anti-lock / Predbreaker
+getgenv().antilock = getgenv().antilock or { enabled = false, mode = "Sky", predBreakerValue = 0.1, dot = false }
+
+-- Enemy stats & highlight
+O.Visualize = O.Visualize or { enabled = false, highlightColor = Color3.fromRGB(140, 0, 200), showDot = true }
+local highlight = Instance.new("Highlight")
+highlight.Parent = game:GetService("CoreGui")
+highlight.Enabled = false
+highlight.FillTransparency = 0.4
+highlight.OutlineTransparency = 0
+
+-- Drawing dot used for visualize target
+local dot = Drawing.new("Circle")
+dot.Color = Color3.fromRGB(255,255,255)
+dot.Thickness = 2
+dot.Filled = true
+dot.Radius = 4
+dot.Visible = false
+
+-- Camlock indicator images (replaced IDs per request)
+local CAMLOCK_ENABLED_ID = "rbxassetid://104520233995589"
+local CAMLOCK_DISABLED_ID = "rbxassetid://136474114676519"
+
+-- Small draggable camlock indicator
+local function createCamlockIndicator()
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "OBLIV_CamIndicator"
+    sg.ResetOnSpawn = false
+    sg.Parent = game.CoreGui
+
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(0,44,0,44)
+    img.Position = UDim2.new(0,10,0,10)
+    img.BackgroundTransparency = 1
+    img.Image = CAMLOCK_DISABLED_ID
+    img.ZIndex = 10
+    img.Parent = sg
+
+    local uiCorner = Instance.new("UICorner", img)
+    uiCorner.CornerRadius = UDim.new(0,10)
+
+    -- dragging support for mobile
+    local dragging, startPos, startInput
+    img.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            startInput = inp.Position
+            startPos = img.Position
+            inp.Changed:Connect(function()
+                if inp.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    img.InputChanged:Connect(function(inp)
+        if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+            local delta = inp.Position - startInput
+            img.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- update function
+    local function update(state)
+        if state then
+            img.Image = CAMLOCK_ENABLED_ID
+            img.ImageTransparency = 0
+        else
+            img.Image = CAMLOCK_DISABLED_ID
+            img.ImageTransparency = 0.5
+        end
+    end
+
+    return { Gui = sg, Img = img, Update = update }
+end
+local camIndicator = createCamlockIndicator()
+camIndicator.Update(O.Camlock.enabled)
+
+-- Helper: Find nearest enemy (viewport distance)
+local function FindNearestEnemy()
+    local closest, shortest = nil, math.huge
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = plr.Character.HumanoidRootPart.Position
+            local screenPos, onScreen = Camera:WorldToViewportPoint(pos)
+            if onScreen then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - Camera.ViewportSize/2).Magnitude
+                if dist < shortest then shortest = dist; closest = plr end
+            end
+        end
+    end
+    return closest
+end
+
+-- Randomized hitpart system (shared between Camlock & TargetAim)
+local randomizing = false
+local randomParts = {"Head","UpperTorso","LowerTorso","HumanoidRootPart","Torso"}
+local randomInterval = 0.1 -- default speed
+
+local function startRandomHitPart()
+    if randomizing then return end
+    randomizing = true
+    task.spawn(function()
+        while randomizing do
+            local choice = randomParts[math.random(1,#randomParts)]
+            -- set both for camlock and targetaim to use
+            O.Camlock.HitPart = choice
+            O.Targetaim.HitPart = choice
+            task.wait(randomInterval)
+        end
+    end)
+end
+
+local function stopRandomHitPart()
+    randomizing = false
+end
+
+-- Randomized AirPart (for AutoAir)
+local randomAir = false
+local randomAirParts = {"Head","UpperTorso","LowerTorso","HumanoidRootPart","Torso"}
+local function startRandomAirPart()
+    if randomAir then return end
+    randomAir = true
+    task.spawn(function()
+        while randomAir do
+            local choice = randomAirParts[math.random(1,#randomAirParts)]
+            O.AutoAir.AirPart = choice
+            task.wait(randomInterval)
+        end
+    end)
+end
+local function stopRandomAirPart() randomAir = false end
+
+-- Orbit fix: use RenderStepped with angle in radians and dt-based increment for smooth spin
+RunService.Heartbeat:Connect(function(dt)
+    if not O.orbit.enabled then return end
+    local lp = LocalPlayer
+    if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then return end
+    local target = O.Camlock.target
+    if not target or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local root = lp.Character.HumanoidRootPart
+    local targetRoot = target.Character.HumanoidRootPart
+
+    O.orbit.angle = (O.orbit.angle or 0) + (dt * O.orbit.speed)
+    local angleRad = math.rad(O.orbit.angle)
+    local offset = Vector3.new(math.cos(angleRad) * O.orbit.distance, O.orbit.height, math.sin(angleRad) * O.orbit.distance)
+    local orbitPosition = targetRoot.Position + offset
+    root.CFrame = CFrame.new(orbitPosition, targetRoot.Position)
+end)
+
+-- Camlock smooth camera lerp (preserved)
+RunService.Heartbeat:Connect(function()
+    if O.Camlock.enabled and O.Camlock.target and O.Camlock.target.Character then
+        local camPart = O.Camlock.target.Character:FindFirstChild(O.Camlock.HitPart)
+        if camPart then
+            local camPred = camPart.Position + (camPart.Velocity * (O.Camlock.Prediction or 0.1))
+            local camGoal = CFrame.new(Camera.CFrame.Position, camPred)
+            Camera.CFrame = Camera.CFrame:Lerp(camGoal, O.Settings.Smoothness or 0.1)
+        end
+    end
+end)
+
+-- TargetAim hooks (Namecall and Index methods preserved)
+-- Namecall hook
+if O.Targetaim.Method == "Namecall" then
+    local __namecall
+    __namecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
+        local Args = {...}
+        local Method = tostring(getnamecallmethod())
+        if not checkcaller() and Method == "FireServer" then
+            for i, Arg in pairs(Args) do
+                if typeof(Arg) == "Vector3" and O.Targetaim.enabled then
+                    local Target = O.Targetaim.target
+                    if Target and Target.Character and O.Targetaim.HitPart and Target.Character[O.Targetaim.HitPart] then
+                        local TargetPart = Target.Character[O.Targetaim.HitPart]
+                        local predictedPosition = TargetPart.Position + (TargetPart.Velocity * (O.Targetaim.Prediction or 0.1)) + Vector3.new(0, O.AutoAir.jumpOffset or 0, 0)
+                        Args[i] = predictedPosition
+                    end
+                    return __namecall(Self, unpack(Args))
+                end
+            end
+        end
+        return __namecall(Self, ...)
+    end))
+end
+
+-- Index hook
+if O.Targetaim.Method == "Index" then
+    local __index
+    __index = hookmetamethod(game, "__index", newcclosure(function(Object, Key, ...)
+        if Object:IsA("Mouse") and Key == "Hit" then
+            local Target = O.Targetaim.target
+            if O.Targetaim.enabled and Target and Target.Character and O.Targetaim.HitPart and Target.Character[O.Targetaim.HitPart] then
+                local TargetPart = Target.Character[O.Targetaim.HitPart]
+                local predictedPosition = TargetPart.Position + (TargetPart.Velocity * (O.Targetaim.Prediction or 0.1)) + Vector3.new(0, O.AutoAir.jumpOffset or 0, 0)
+                return CFrame.new(predictedPosition)
+            end
+        end
+        return __index(Object, Key, ...)
+    end))
+end
+
+-- AutoAir logic (keeps original behavior)
+RunService.Heartbeat:Connect(function()
+    if not O.AutoAir.enabled then return end
+    local Victim = O.Targetaim.target
+    if Victim and Victim.Character then
+        local TargetRootPart = Victim.Character:FindFirstChild(O.AutoAir.AirPart)
+        if TargetRootPart then
+            local TargetVel = TargetRootPart.Velocity
+            if TargetVel.Y > 25 then
+                local Character = LocalPlayer.Character
+                if Character then
+                    local Tool = Character:FindFirstChildOfClass("Tool")
+                    if Tool then
+                        task.wait(O.AutoAir.delay or 0.1)
+                        Tool:Activate()
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Preserve hit detection logic and sounds (optimized)
+local last_health = {}
+RunService.PostSimulation:Connect(function()
+    local target = O.Targetaim and O.Targetaim.target
+    local locking = O.Camlock and O.Camlock.enabled
+    local humanoid = target and target.Character and target.Character:FindFirstChild("Humanoid")
+    if locking and target and humanoid and O.hit.detection then
+        local current_health = humanoid.Health
+        if not last_health[target.UserId] then last_health[target.UserId] = current_health end
+        if current_health < last_health[target.UserId] then
+            if O.hit.sound_enabled and HitSoundId[O.hit.sound_id] then
+                local sound = Instance.new("Sound")
+                sound.SoundId = HitSoundId[O.hit.sound_id]
+                sound.Volume = O.hit.sound_volume or 1
+                sound.Parent = workspace
+                sound:Play()
+                Debris:AddItem(sound, 2)
+            end
+            if O.hit.logs and library and library.Notify then
+                pcall(function() library:Notify("Hit Player ".. tostring(target.DisplayName), O.hit.notify_duration or 1) end)
+            end
+        end
+        last_health[target.UserId] = current_health
+    end
+end)
+
+-- Enemy stats HUD (optimized + patterned health + rounded corners)
+local statsGui, statsFrame, pfpImg, nameLabel, hpBack, hpFill, hpPattern
+local thumbCache = {}
+local statsEnabled = false
+local statsUpdateTick = 0.1 -- throttle
+
+local function createStatsHUD()
+    if statsGui then return end
+    statsGui = Instance.new("ScreenGui", game:GetService("CoreGui")); statsGui.ResetOnSpawn = false; statsGui.Name = "OBLIV_EnemyStats"
+    statsFrame = Instance.new("Frame", statsGui)
+    statsFrame.Size = UDim2.new(0,260,0,84)
+    statsFrame.Position = UDim2.new(0.5,-130,0.06,0)
+    statsFrame.AnchorPoint = Vector2.new(0.5,0)
+    statsFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    statsFrame.BackgroundTransparency = 0.05
+    statsFrame.BorderSizePixel = 0
+
+    local corner = Instance.new("UICorner", statsFrame); corner.CornerRadius = UDim.new(0,12)
+    local shadow = Instance.new("Frame", statsFrame); shadow.ZIndex = -1
+    shadow.Size = UDim2.new(1,6,1,6); shadow.Position = UDim2.new(0,-3,0,-3); shadow.BackgroundTransparency = 0.9
+
+    pfpImg = Instance.new("ImageLabel", statsFrame)
+    pfpImg.Size = UDim2.new(0,56,0,56)
+    pfpImg.Position = UDim2.new(0,8,0,12)
+    pfpImg.BackgroundTransparency = 1
+    local pfpCorner = Instance.new("UICorner", pfpImg); pfpCorner.CornerRadius = UDim.new(1,0)
+
+    nameLabel = Instance.new("TextLabel", statsFrame)
+    nameLabel.Size = UDim2.new(0,160,0,26); nameLabel.Position = UDim2.new(0,74,0,8)
+    nameLabel.Text = ""; nameLabel.TextColor3 = Color3.new(1,1,1); nameLabel.BackgroundTransparency = 1
+    nameLabel.Font = Enum.Font.GothamBold; nameLabel.TextSize = 16; nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    hpBack = Instance.new("Frame", statsFrame)
+    hpBack.Size = UDim2.new(0,170,0,14); hpBack.Position = UDim2.new(0,74,0,42)
+    hpBack.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    hpBack.BorderSizePixel = 0; hpBack.AnchorPoint = Vector2.new(0,0)
+    local hpCorner = Instance.new("UICorner", hpBack); hpCorner.CornerRadius = UDim.new(0,8)
+
+    hpFill = Instance.new("Frame", hpBack)
+    hpFill.Size = UDim2.new(1,0,1,0)
+    hpFill.BorderSizePixel = 0; hpFill.BackgroundColor3 = O.Visualize.highlightColor or Color3.fromRGB(140,0,200)
+    local fillCorner = Instance.new("UICorner", hpFill); fillCorner.CornerRadius = UDim.new(0,8)
+
+    -- Pattern overlay: use ImageLabel as repeating tiled small stripes (fallback to simple gradient if not available)
+    hpPattern = Instance.new("ImageLabel", hpFill)
+    hpPattern.Size = UDim2.new(2,0,1,0) -- larger than fill so it can animate
+    hpPattern.Position = UDim2.new(0,0,0,0)
+    hpPattern.BackgroundTransparency = 1
+    hpPattern.Image = "rbxassetid://0" -- empty; if you have a pattern asset, replace this id
+    hpPattern.Visible = false
+end
+
+local function destroyStatsHUD()
+    if statsGui then statsGui:Destroy() end
+    statsGui = nil
+end
+
+local lastStatsTarget = nil
+local lastStatsTime = 0
+RunService.RenderStepped:Connect(function(dt)
+    if not O.Visualize or not O.Visualize.enabled or not O.ESP then
+        if statsGui then destroyStatsHUD() end
+        highlight.Enabled = false; dot.Visible = false
+        return
+    end
+
+    local target = O.Targetaim and O.Targetaim.target
+    if target and target.Character then
+        if not statsGui then createStatsHUD() end
+        local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+        -- thumbnail cache (only fetch when target changes)
+        if lastStatsTarget ~= target.UserId then
+            lastStatsTarget = target.UserId
+            pcall(function()
+                local thumbUrl = Players:GetUserThumbnailAsync(target.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+                if thumbUrl then pfpImg.Image = thumbUrl end
+            end)
+        end
+        nameLabel.Text = target.DisplayName or target.Name
+        if humanoid and humanoid.MaxHealth > 0 then
+            local hpPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+            hpFill.Size = UDim2.new(hpPercent, 0, 1, 0)
+            -- recolor fill to accent color (interpolate if you want)
+            hpFill.BackgroundColor3 = O.Visualize.highlightColor or Color3.fromRGB(140,0,200)
+        end
+        highlight.Adornee = target.Character
+        highlight.FillColor = O.Visualize.highlightColor or Color3.fromRGB(140,0,200)
+        highlight.Enabled = true
+
+        -- dot update
+        if target.Character:FindFirstChild("HumanoidRootPart") then
+            local pos, onScreen = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
+            dot.Visible = onScreen and O.Visualize.showDot
+            if onScreen then dot.Position = Vector2.new(pos.X, pos.Y) end
+        end
+    else
+        destroyStatsHUD(); highlight.Enabled = false; dot.Visible = false
+    end
+end)
+
+-- Anti-lock (Predbreaker/Sky) integrated safely
+RunService.Heartbeat:Connect(function()
+    if not getgenv().antilock then return end
+    local player = LocalPlayer
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    if getgenv().antilock.enabled then
+        if getgenv().antilock.mode == "Predbreaker" then
+            -- set to zero velocity for a short frame
+            local prevVel = hrp.Velocity
+            hrp.Velocity = Vector3.new(0,0,0)
+            -- after render step restore
+            RunService.RenderStepped:Wait()
+            hrp.Velocity = prevVel
+        elseif getgenv().antilock.mode == "Sky" then
+            local prevVel = hrp.Velocity
+            hrp.Velocity = Vector3.new(0,100,0)
+            RunService.RenderStepped:Wait()
+            hrp.Velocity = prevVel
+        end
+    end
+end)
+
+-- Remove AntiAimViewer: ensure no hooks remain (do not re-add)
+getgenv().AntiAimViewer = nil
+
+-- AutoReload implementation preserved
+getgenv().AutoReloadEnabled = getgenv().AutoReloadEnabled or false
+local function autoReloadLoop()
+    while getgenv().AutoReloadEnabled do
+        task.wait(0.1)
+        local char = LocalPlayer.Character
+        if char then
+            local tool = char:FindFirstChildWhichIsA("Tool")
+            if tool then
+                local ammo = tool:FindFirstChild("AMMO")
+                local reloadEvent = tool:FindFirstChildWhichIsA("RemoteEvent")
+                if ammo and reloadEvent and ammo.Value == 0 then
+                    pcall(function() reloadEvent:FireServer() end)
+                    task.wait(1)
+                end
+            end
+        end
+    end
+end
+
+-- Save & Theme manager integration (best-effort)
+if savemanager and savemanager.SetLibrary then
+    savemanager:SetLibrary(library)
+    savemanager:SetFolder('OBLIVcfg')
+end
+if thememanager and thememanager.SetLibrary then
+    thememanager:SetLibrary(library)
+    thememanager:SetFolder('OBLIVthemes')
+end
+
+-- Build Criminality UI with tabs and images provided
+local game_name = pcall(function() return MarketplaceService:GetProductInfo(game.PlaceId).Name end) and MarketplaceService:GetProductInfo(game.PlaceId).Name or "Game"
+local window = library.new('OBLIV | '..game_name, 'OblivCfg')
+
+-- Tab icons (user-provided)
+local combatTab   = window.new_tab("rbxassetid://4483346003")  -- Combat
+local rageTab     = window.new_tab("rbxassetid://4384394254")  -- Rage
+local visualTab   = window.new_tab("rbxassetid://10802202968") -- Visuals
+local settingsTab = window.new_tab("rbxassetid://17642264140") -- Settings
+
+-- Build sections matching requested grouping
+-- Combat Tab
+local mainSection = combatTab.new_section("Main")
+local mainSector = mainSection.new_sector("Combat", "Left")
+local airSector = mainSection.new_sector("Air", "Right")
+local groundSector = mainSection.new_sector("AntiGround", "Right")
+
+-- Rage Tab
+local hvhSection = rageTab.new_section("HVH & Autos")
+local hvhSector = hvhSection.new_sector("Orbit", "Left")
+local autosSector = hvhSection.new_sector("Autos", "Right")
+local moveSector = hvhSection.new_sector("Movement", "Right")
+
+-- Visuals Tab
+local visualsSection = visualTab.new_section("Visuals")
+local vizSector = visualsSection.new_sector("Visuals", "Left")
+local hitSector = visualsSection.new_sector("Hit Sounds", "Left")
+local espSector = visualsSection.new_sector("ESP & Stats", "Right")
+
+-- Settings Tab
+local configSection = settingsTab.new_section("Config")
+local themeSection = settingsTab.new_section("Theme")
+
+-- Combat elements
+mainSector.element('Toggle','Enable Camlock',{default={Toggle=O.Camlock.enabled}},function(v)
+    O.Camlock.enabled = v.Toggle
+    if v.Toggle then
+        local enemy = FindNearestEnemy()
+        if enemy then O.Camlock.target = enemy; O.Targetaim.target = enemy end
+    else
+        O.Camlock.target = nil; O.Targetaim.target = nil
+    end
+    camIndicator.Update(O.Camlock.enabled)
+end)
+
+mainSector.element('Toggle','Enable TargetAim',{default={Toggle=O.Targetaim.enabled}},function(v)
+    O.Targetaim.enabled = v.Toggle
+    if v.Toggle and not O.Targetaim.target then
+        O.Targetaim.target = FindNearestEnemy()
+    end
+end)
+
+mainSector.element('Dropdown','Hit Part',{options={'HumanoidRootPart','UpperTorso','LowerTorso','Head','Torso','Random'}, default={Dropdown=O.Targetaim.HitPart}},function(v)
+    local val = v.Dropdown
+    if val == "Random" then startRandomHitPart() else stopRandomHitPart(); O.Targetaim.HitPart = val; O.Camlock.HitPart = val end
+end)
+
+mainSector.element('Dropdown','Hook Method',{options={'Namecall','Index'}, default={Dropdown=O.Targetaim.Method}},function(v)
+    O.Targetaim.Method = v.Dropdown
+    -- Re-hooking is complex; user must re-execute or script handles both methods via conditionals above.
+end)
+
+mainSector.element('TextBox','Prediction',{default=tostring(O.Targetaim.Prediction)},function(v) O.Targetaim.Prediction = tonumber(v.Text) or O.Targetaim.Prediction; O.Camlock.Prediction = O.Targetaim.Prediction end)
+mainSector.element('TextBox','Smoothness',{default=tostring(O.Settings.Smoothness)},function(v) O.Settings.Smoothness = tonumber(v.Text) or O.Settings.Smoothness end)
+mainSector.element('Toggle','Resolver V1',{default={Toggle=O.Camlock.resolver}},function(v) O.Camlock.resolver = v.Toggle end)
+mainSector.element('Toggle','Auto Prediction',{default={Toggle=false}},function(v) if v.Toggle then task.spawn(function() while v.Toggle do startAutoPrediction() task.wait(1) end end) end end)
+
+-- Auto Air
+airSector.element('Toggle','Auto Air',{default={Toggle=O.AutoAir.enabled}},function(v) O.AutoAir.enabled = v.Toggle end)
+airSector.element('Dropdown','Air Part',{options={'RightFoot','LowerTorso','HumanoidRootPart','Head','UpperTorso','Random'}, default={Dropdown=O.AutoAir.AirPart}},function(v)
+    if v.Dropdown == "Random" then startRandomAirPart() else stopRandomAirPart(); O.AutoAir.AirPart = v.Dropdown end
+end)
+airSector.element('TextBox','Jump Offset',{default=tostring(O.AutoAir.jumpOffset)},function(v) O.AutoAir.jumpOffset = tonumber(v.Text) or O.AutoAir.jumpOffset end)
+airSector.element('TextBox','Delay',{default=tostring(O.AutoAir.delay)},function(v) O.AutoAir.delay = tonumber(v.Text) or O.AutoAir.delay end)
+
+-- Anti-groundshots
+groundSector.element('Toggle','Enable GroundShotDetect',{default={Toggle=getgenv().GroundShotDetection and getgenv().GroundShotDetection.Enabled or false}},function(v) getgenv().GroundShotDetection = getgenv().GroundShotDetection or {}; getgenv().GroundShotDetection.Enabled = v.Toggle end)
+groundSector.element('TextBox','Threshold',{default=tostring(getgenv().GroundShotDetection and getgenv().GroundShotDetection.GroundShotThreshold or 0.5)},function(v) getgenv().GroundShotDetection.GroundShotThreshold = tonumber(v.Text) or getgenv().GroundShotDetection.GroundShotThreshold end)
+groundSector.element('TextBox','Range',{default=tostring(getgenv().GroundShotDetection and getgenv().GroundShotDetection.DetectionRange or 20)},function(v) getgenv().GroundShotDetection.DetectionRange = tonumber(v.Text) or getgenv().GroundShotDetection.DetectionRange end)
+
+-- Rage / Orbit / Autos / Movement
+hvhSector.element('Toggle','Enable Orbit',{default={Toggle=O.orbit.enabled}},function(v) O.orbit.enabled = v.Toggle end)
+hvhSector.element('TextBox','Orbit Speed',{default=tostring(O.orbit.speed)},function(v) O.orbit.speed = tonumber(v.Text) or O.orbit.speed end)
+hvhSector.element('TextBox','Orbit Height',{default=tostring(O.orbit.height)},function(v) O.orbit.height = tonumber(v.Text) or O.orbit.height end)
+hvhSector.element('TextBox','Orbit Distance',{default=tostring(O.orbit.distance)},function(v) O.orbit.distance = tonumber(v.Text) or O.orbit.distance end)
+
+autosSector.element('Toggle','Auto Reload',{default={Toggle=getgenv().AutoReloadEnabled}},function(v) getgenv().AutoReloadEnabled = v.Toggle if v.Toggle then task.spawn(autoReloadLoop) end end)
+autosSector.element('Button','Auto Shoot',{},function()
+    -- Create a small draggable auto-shoot button
+    local ScreenGui = Instance.new("ScreenGui"); ScreenGui.Parent = game.CoreGui; ScreenGui.ResetOnSpawn = false
+    local button = Instance.new("TextButton", ScreenGui)
+    button.Size = UDim2.new(0,80,0,60); button.Position = UDim2.new(0.5,-100,0.5,-25); button.Text = "Auto Off"; button.BackgroundColor3 = Color3.fromRGB(20,20,20); button.TextColor3 = Color3.new(1,1,1); button.Font = Enum.Font.Code
+    local autoShooting = false
+    button.MouseButton1Click:Connect(function() autoShooting = not autoShooting; button.Text = autoShooting and "Auto On" or "Auto Off"; if autoShooting then task.spawn(function() while autoShooting do local char = LocalPlayer.Character; if char then local tool = char:FindFirstChildOfClass("Tool"); if tool and tool:FindFirstChild("Handle") then tool:Activate() end end task.wait() end end) end end)
+    -- draggable (mobile)
+    local dragging, startPos, startInput
+    button.InputBegan:Connect(function(inp) if inp.UserInputType==Enum.UserInputType.MouseButton1 or inp.UserInputType==Enum.UserInputType.Touch then dragging=true; startInput=inp.Position; startPos=button.Position; inp.Changed:Connect(function() if inp.UserInputState==Enum.UserInputState.End then dragging=false end end) end end)
+    button.InputChanged:Connect(function(inp) if dragging and (inp.UserInputType==Enum.UserInputType.MouseMovement or inp.UserInputType==Enum.UserInputType.Touch) then local delta = inp.Position-startInput; button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+delta.X, startPos.Y.Scale, startPos.Y.Offset+delta.Y) end end)
+end)
+
+moveSector.element('Toggle','Enable CFrame',{default={Toggle=getgenv().cframe.settings.enabled}},function(v) getgenv().cframe.settings.enabled = v.Toggle end)
+moveSector.element('Toggle','Show CFrame Button',{default={Toggle=getgenv().cframe.settings.showbutton}},function(v) getgenv().cframe.settings.showbutton = v.Toggle end)
+moveSector.element('Slider','CFrame Speed',{default={min=1,max=10,default=getgenv().cframe.settings.speed or 1}},function(v) getgenv().cframe.settings.speed = v.Slider or v end)
+
+-- Visuals & ESP & Hit sounds
+vizSector.element('Toggle','Enable FOV',{default={Toggle=O.Circle.enabled}},function(v) O.Circle.enabled = v.Toggle end)
+vizSector.element('TextBox','FOV Radius',{default=tostring(O.Circle.radius)},function(v) O.Circle.radius = tonumber(v.Text) or O.Circle.radius end)
+vizSector.element('Toggle','Enable Crosshair',{default={Toggle=getgenv().OBLIVCross.enabled}},function(v) getgenv().OBLIVCross.enabled = v.Toggle end)
+vizSector.element('Dropdown','Crosshair Mode',{options={'Center','Mouse'}, default={Dropdown='Center'}},function(v) getgenv().OBLIVCross.mode = tostring(v.Dropdown):lower() end)
+vizSector.element('TextBox','Crosshair Radius',{default=tostring(getgenv().OBLIVCross.radius)},function(v) getgenv().OBLIVCross.radius = tonumber(v.Text) or getgenv().OBLIVCross.radius end)
+
+espSector.element('Toggle','Target Box',{default={Toggle=O.ESP.box}},function(v) O.ESP.box = v.Toggle end)
+espSector.element('Toggle','Target Tracer',{default={Toggle=O.ESP.tracer}},function(v) O.ESP.tracer = v.Toggle end)
+espSector.element('Toggle','Visualize Enemy',{default={Toggle=O.Visualize.enabled}},function(v) O.Visualize.enabled = v.Toggle end)
+espSector.element('Toggle','Enemy Stats',{default={Toggle=O.Visualize.enabled}},function(v) O.Visualize.enabled = v.Toggle end)
+
+-- Hit sounds dropdown only
+hitSector.element('Toggle','Hit Detection',{default={Toggle=O.hit.detection}},function(v) O.hit.detection = v.Toggle end)
+hitSector.element('Toggle','Hit Logs',{default={Toggle=O.hit.logs}},function(v) O.hit.logs = v.Toggle end)
+hitSector.element('Toggle','Hit Sound',{default={Toggle=O.hit.sound_enabled}},function(v) O.hit.sound_enabled = v.Toggle end)
+hitSector.element('Dropdown','Hit Sound',{options=hitSoundsNames, default={Dropdown=O.hit.sound_id}},function(v) O.hit.sound_id = v.Dropdown end)
+hitSector.element('TextBox','Sound Volume',{default=tostring(O.hit.sound_volume)},function(v) O.hit.sound_volume = tonumber(v.Text) or O.hit.sound_volume end)
+hitSector.element('TextBox','Notify Duration',{default=tostring(O.hit.notify_duration)},function(v) O.hit.notify_duration = tonumber(v.Text) or O.hit.notify_duration end)
+
+-- Teleport / Buy buttons
+local function addBuyButton(sector, name, searchName)
+    sector.element('Button', name, {}, function()
+        local lp = LocalPlayer; local char = lp.Character or lp.CharacterAdded:Wait(); local hrp = char:WaitForChild("HumanoidRootPart")
+        local function findPad(name)
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj:IsA("Model") and obj.Name:lower():find(name:lower(),1,true) then return obj end
+            end
+        end
+        local pad = findPad(searchName)
+        if pad then local partToTP = pad:FindFirstChildWhichIsA("BasePart") or pad.PrimaryPart if partToTP then hrp.CFrame = partToTP.CFrame + Vector3.new(0,3,0) end end
+    end)
+end
+
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'High-Medium Armor', '[High-Medium Armor]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'LMG', '[LMG]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'Double-Barrel', '[Double-Barrel SG]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'Tactical Shotgun', '[TacticalShotgun]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'Revolver', '[Revolver]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'RPG', '[RPG]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'Pizza', '[Pizza]')
+addBuyButton(visualsSection.new_sector("Teleport","Right"), 'Mask', '[Surgeon Mask]')
+
+-- Settings: Config & Theme
+configSection.new_sector("Config","Left").element('Button','Save Config',{},function() if savemanager and savemanager.Save then savemanager:Save() elseif savemanager and savemanager.Save then savemanager.Save() end end)
+configSection.new_sector("Config","Left").element('Button','Load Config',{},function() if savemanager and savemanager.Load then savemanager:Load() end end)
+configSection.new_sector("Config","Left").element('Button','Delete Config',{},function() if savemanager and savemanager.Delete then savemanager:Delete() end end)
+
+local themeSector = themeSection.new_sector("Theme","Left")
+themeSector.element('ColorPicker','Accent Color',{default={Color=Color3.fromRGB(140,0,200)}},function(v) -- expects v.Color
+    local c = v.Color or (v and v.Color) or Color3.fromRGB(140,0,200)
+    -- apply to UI library if it supports set theme
+    if library and library.SetAccent then pcall(function() library:SetAccent(c) end) end
+    O.Visualize.highlightColor = c
+end)
+
+-- Mobile-friendly Hide UI small circle button
+local function createHideUIButton()
+    local sg = Instance.new("ScreenGui"); sg.Name = "OBLIV_HideUI"; sg.ResetOnSpawn=false; sg.Parent = game.CoreGui
+    local btn = Instance.new("ImageButton", sg)
+    btn.Size = UDim2.new(0,36,0,36); btn.Position = UDim2.new(1,-50,0,10); btn.BackgroundTransparency = 0.2; btn.Image = ""; btn.ZIndex = 50
+    local corner = Instance.new("UICorner", btn); corner.CornerRadius = UDim.new(0,9)
+    btn.InputBegan:Connect(function(inp) if inp.UserInputType==Enum.UserInputType.MouseButton1 or inp.UserInputType==Enum.UserInputType.Touch then btn.Draggable = true end end)
+    btn.MouseButton1Click:Connect(function() if window and window.SetOpen then window:SetOpen(not window:IsOpen()) elseif library and library.Toggle then library:Toggle() end end)
+    return sg, btn
+end
+local hideGui, hideBtn = createHideUIButton()
+
+-- Final: initial UI open
+if window.SetOpen then window:SetOpen(true) end
+
+-- Notification of load
+if library and library.Notify then pcall(function() library:Notify("OBLIV loaded successfully", 4) end) end
+
+-- End of Script
