@@ -1,0 +1,1780 @@
+setfpscap(1000)
+
+print("Youna67 Loaded")
+
+local g = getinfo or debug.getinfo
+local d = false
+local h = {}
+
+local x, y
+
+setthreadidentity(2)
+
+for i, v in getgc(true) do
+    if typeof(v) == "table" then
+        local a = rawget(v, "Detected")
+        local b = rawget(v, "Kill")
+    
+        if typeof(a) == "function" and not x then
+            x = a
+            
+            local o; o = hookfunction(x, function(c, f, n)
+                if c ~= "_" then
+                    if d then
+                    end
+                end
+                
+                return true
+            end)
+
+            table.insert(h, x)
+        end
+
+        if rawget(v, "Variables") and rawget(v, "Process") and typeof(b) == "function" and not y then
+            y = b
+            local o; o = hookfunction(y, function(f)
+                if d then
+                end
+            end)
+
+            table.insert(h, y)
+        end
+    end
+end
+
+local o; o = hookfunction(getrenv().debug.info, newcclosure(function(...)
+    local a, f = ...
+
+    if x and a == x then
+        if d then
+        end
+
+        return coroutine.yield(coroutine.running())
+    end
+    
+    return o(...)
+end))
+
+setthreadidentity(7)
+
+if game.PlaceId == 7213786345 or game.PlaceId == 16033173781 or game.PlaceId == 2788229376 then
+    local a = {
+        "BANREMOTE",
+        "PERMAIDBAN",
+        "KICKREMOTE", 
+        "BR_KICKPC",
+        "BR_KICKMOBILE",
+        "OneMoreTime",
+        "CHECKER_1",
+        "TeleportDetect",
+        "CHECKER",
+        "GUI_CHECK",
+        "checkingSPEED",
+        "CHECKER_1", 
+        "TeleportDetect",
+        "OneMoreTime",
+        "PERMA-BAN",
+        "PERMABAN",
+        "BreathingHAMON",
+        "JJARC",
+        "TakePoisonDamage",
+        "FORCEFIELD",
+        "Christmas_Sock",
+        "VirusCough",
+        "Symbiote",
+        "Symbioted",
+        "RequestAFKDisplay"
+    }
+
+    local Remote
+
+    local FireHook
+    FireHook = hookmetamethod(
+        game,
+        "__namecall",
+        function(...)
+            local c = {...}
+            local self, d, e = c[1], getnamecallmethod(), getcallingscript()
+            if d == "FireServer" and self == Remote and table.find(a, c[2]) then
+                return
+            end
+            return FireHook(...)
+        end
+    )
+
+    local RemoteNames = {"MainEvent", "Bullets", "Remote", "MAINEVENT"}
+    for _, remote in pairs(game.ReplicatedStorage:GetDescendants()) do
+        if table.find(RemoteNames, remote.Name) and remote:IsA("RemoteEvent") then
+            Remote = remote
+            break
+        end
+    end
+
+    return Remote
+end
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local Debris = game:GetService("Debris")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+if getgenv().YounaExecuted then return end
+getgenv().YounaExecuted = true
+
+getgenv().Youna = getgenv().Youna or {}
+local Y = getgenv().Youna
+
+Y.Config = Y.Config or {}
+Y.Config.Path = Y.Config.Path or "/"
+Y.Config.File = Y.Config.File or "youna67.json"
+
+Y.Settings = Y.Settings or {}
+Y.Settings.RandomDelay = Y.Settings.RandomDelay or 0.5
+Y.Settings.Title = Y.Settings.Title or "youna.cc"
+Y.Settings.TitleEnabled = (Y.Settings.TitleEnabled == nil) and true or Y.Settings.TitleEnabled
+Y.Settings.Theme = Y.Settings.Theme or "Red+Black"
+Y.Settings.Accent = Y.Settings.Accent or { r = 200, g = 50, b = 50 }
+Y.Settings.ShowEnemyStat = (Y.Settings.ShowEnemyStat == nil) and false or Y.Settings.ShowEnemyStat
+
+Y.Targetaim = Y.Targetaim or {
+    enabled = false,
+    HitPart = "HumanoidRootPart",
+    CurrentHitPart = "HumanoidRootPart",
+    prediction = 0.13,
+    fov = 120,
+    smoothness = 5,
+    target = nil,
+    resolver = false,
+    autoPrediction = false,
+    hookMethod = "Namecall"
+}
+
+Y.Camlock = Y.Camlock or {
+    enabled = false,
+    HitPart = "HumanoidRootPart",
+    CurrentHitPart = "HumanoidRootPart",
+    Prediction = 0.13,
+    Smoothness = 0.25,
+    target = nil,
+    autoPrediction = false
+}
+
+Y.orbit = Y.orbit or { enabled = false, distance = 10, height = 4, speed = 90, angle = 0 }
+
+Y.crosshair = Y.crosshair or {
+    enabled = false,
+    minRadius = 35,
+    maxRadius = 55,
+    speed = 20,
+    length = 12,
+    thickness = 2,
+    color = Color3.fromRGB(255,0,0),
+    spin = true,
+    spin_speed = 90,
+    mode = "Center",
+    zoom = true
+}
+
+Y.visuals = Y.visuals or {
+    selfChams = false,
+    trail = false,
+    trailLifetime = 0.6,
+    trailTexture = "",
+    trailTransparency = 0.5,
+    chamColor = Color3.fromRGB(200,50,50),
+    chamMaterial = "Neon",
+    chamTransparency = 0.3,
+    rainbow = false,
+    hitFeedback = "None",
+    selectedHitSound = "None",
+    hitSoundVolume = 3,
+    hitNotifyDur = 2,
+    hitFeedbackEnabled = true,
+    visualizationMode = "Dot",
+    predVisualizer = false,
+    hitSkeleton = false,
+    hitChams = false
+}
+
+Y.CFrameSpeed = Y.CFrameSpeed or { enabled = false, speed = 50 }
+Y.AutoShoot = Y.AutoShoot or { enabled = false, fireDelay = 0.08 }
+Y.AutoReload = Y.AutoReload or { enabled = false }
+
+Y.FloatingButtons = Y.FloatingButtons or { CFrame = false, Auto = false, Cam = false, WS = false, JP = false, WS_State = false, JP_State = false }
+Y.FloatingPositions = Y.FloatingPositions or {}
+
+Y.AntiWall = Y.AntiWall or { AutoWall = false, WallCheck = false }
+Y.Checks = Y.Checks or { KO = true }
+
+local HITSOUNDS = {
+    Bubble = "rbxassetid://6534947588",
+    Lazer = "rbxassetid://130791043",
+    Pick = "rbxassetid://1347140027",
+    Pop = "rbxassetid://198598793",
+    Rust = "rbxassetid://1255040462",
+    Sans = "rbxassetid://3188795283",
+    Fart = "rbxassetid://130833677",
+    Big = "rbxassetid://5332005053",
+    Vine = "rbxassetid://5332680810",
+    UwU = "rbxassetid://8679659744",
+    Bruh = "rbxassetid://4578740568",
+    Skeet = "rbxassetid://5633695679",
+    Neverlose = "rbxassetid://6534948092",
+    Fatality = "rbxassetid://6534947869",
+    Bonk = "rbxassetid://5766898159",
+    Minecraft = "rbxassetid://5869422451",
+    Gamesense = "rbxassetid://4817809188",
+    RIFK7 = "rbxassetid://9102080552",
+    Bamboo = "rbxassetid://3769434519",
+    Crowbar = "rbxassetid://546410481",
+    Weeb = "rbxassetid://6442965016",
+    Beep = "rbxassetid://8177256015",
+    Bambi = "rbxassetid://8437203821",
+    Stone = "rbxassetid://3581383408",
+    OldFatality = "rbxassetid://6607142036",
+    Click = "rbxassetid://8053704437",
+    Ding = "rbxassetid://7149516994",
+    Snow = "rbxassetid://6455527632",
+    Laser = "rbxassetid://7837461331",
+    Mario = "rbxassetid://2815207981",
+    Steve = "rbxassetid://4965083997",
+    CallofDuty = "rbxassetid://5952120301",
+    Bat = "rbxassetid://3333907347",
+    TF2Critical = "rbxassetid://296102734",
+    Saber = "rbxassetid://8415678813",
+    Baimware = "rbxassetid://3124331820",
+    Osu = "rbxassetid://7149255551",
+    TF2 = "rbxassetid://2868331684",
+    Slime = "rbxassetid://6916371803",
+    AmongUs = "rbxassetid://5700183626",
+    One = "rbxassetid://7380502345"
+}
+HITSOUNDS.None = nil
+
+local Storage = {}
+Storage.HitEffect = {}
+
+local function save_config(name)
+    local path = (Y.Config.Path or "/") .. (name or "default") .. "_" .. (Y.Config.File or "youna_config.json")
+    pcall(function()
+        local encoded = HttpService:JSONEncode(Y)
+        if writefile then writefile(path, encoded) end
+    end)
+end
+
+local function load_config(name)
+    local path = (Y.Config.Path or "/") .. (name or "default") .. "_" .. (Y.Config.File or "youna_config.json")
+    local ok, data = pcall(function()
+        if isfile and isfile(path) then return readfile(path) end
+    end)
+    if ok and data then
+        local success, tbl = pcall(function() return HttpService:JSONDecode(data) end)
+        if success and type(tbl) == "table" then
+            getgenv().Youna = tbl
+            Y = getgenv().Youna
+            return true
+        end
+    end
+    return false
+end
+
+local function delete_config(name)
+    local path = (Y.Config.Path or "/") .. (name or "default") .. "_" .. (Y.Config.File or "youna_config.json")
+    pcall(function() if isfile and isfile(path) then delfile(path) end end)
+end
+
+local function clamp(n, a, b)
+    return math.max(a, math.min(b, n))
+end
+
+local function safeDestroy(o)
+    if not o then return end
+    local ok, res = pcall(function() if o.Destroy then o:Destroy() end end)
+    return ok and res
+end
+
+local partsList = { "Head", "Torso", "UpperTorso", "HumanoidRootPart", "LowerTorso" }
+local timers = { Camlock = 0, Targetaim = 0 }
+
+local function FindNearestEnemy()
+    local best, bestDist = nil, math.huge
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local pos = p.Character.HumanoidRootPart.Position
+                local sp, on = Camera:WorldToViewportPoint(pos)
+                if on then
+                    local d = (Vector2.new(sp.X, sp.Y) - (Camera.ViewportSize / 2)).Magnitude
+                    if d < bestDist then bestDist = d; best = p end
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function isVisible(originPart, targetPart)
+    if not originPart or not targetPart or not originPart.Parent or not targetPart.Parent then return false end
+    local direction = (targetPart.Position - originPart.Position)
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = { LocalPlayer.Character }
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    local result = workspace:Raycast(originPart.Position, direction, params)
+    if result and result.Instance then
+        return result.Instance:IsDescendantOf(targetPart.Parent)
+    end
+    return true
+end
+
+local cross_lines = {}
+do
+    for i = 1, 4 do
+        local L = Drawing.new("Line")
+        L.Visible = false
+        L.Thickness = Y.crosshair.thickness or 2
+        L.Color = Y.crosshair.color or Color3.fromRGB(255,0,0)
+        table.insert(cross_lines, L)
+    end
+end
+
+local cross_text = Drawing.new("Text")
+cross_text.Visible = false
+cross_text.Size = 16
+cross_text.Color = Y.crosshair.color or Color3.fromRGB(255,0,0)
+cross_text.Center = true
+
+local function updateCrosshair()
+    if not Y.crosshair.enabled then
+        for _,L in pairs(cross_lines) do L.Visible = false end
+        cross_text.Visible = false
+        return
+    end
+    local center = Camera.ViewportSize / 2
+    local radius = (Y.crosshair.minRadius or 35) + math.abs(math.sin(tick() * (Y.crosshair.speed or 20))) * ((Y.crosshair.maxRadius or 55) - (Y.crosshair.minRadius or 35))
+    cross_text.Visible = Y.Settings.TitleEnabled
+    cross_text.Text = Y.Settings.Title or "youna.cc"
+    cross_text.Position = Vector2.new(center.X, center.Y + radius + (Y.crosshair.length or 12) + 12)
+    for idx = 1, 4 do
+        local angle = math.rad((idx - 1) * 90 + (Y.crosshair.spin and tick() * Y.crosshair.spin_speed or 0))
+        local from = center + Vector2.new(math.cos(angle) * radius, math.sin(angle) * radius)
+        local to = center + Vector2.new(math.cos(angle) * (radius + (Y.crosshair.length or 12)), math.sin(angle) * (radius + (Y.crosshair.length or 12)))
+        local L = cross_lines[idx]
+        L.From = from
+        L.To = to
+        L.Thickness = Y.crosshair.thickness
+        L.Color = Y.crosshair.color
+        L.Visible = true
+    end
+end
+
+local function PlayHitFeedbackAt(position)
+    if not position then return end
+    if not Y.visuals.hitFeedbackEnabled then return end
+    if Y.visuals.selectedHitSound and Y.visuals.selectedHitSound ~= "None" then
+        local id = HITSOUNDS[Y.visuals.selectedHitSound]
+        if id then
+            local s = Instance.new("Sound")
+            s.SoundId = id
+            s.Volume = Y.visuals.hitSoundVolume or 3
+            s.Parent = workspace
+            pcall(function() s:Play() end)
+            Debris:AddItem(s, 4)
+        end
+    end
+    local effName = Y.visuals.hitFeedback or "None"
+    if effName ~= "None" and Storage.HitEffect[effName] then
+        local attTemplate = Storage.HitEffect[effName]
+        local cloneParent = Instance.new("Part")
+        cloneParent.Size = Vector3.new(1,1,1)
+        cloneParent.Anchored = true
+        cloneParent.CanCollide = false
+        cloneParent.Transparency = 1
+        cloneParent.Position = position
+        cloneParent.Parent = workspace
+        local newAtt = attTemplate:Clone()
+        newAtt.Parent = cloneParent
+        for _, child in pairs(newAtt:GetDescendants()) do
+            if child:IsA("ParticleEmitter") then
+                child.Enabled = true
+                delay(child.Lifetime.Max + 0.1, function()
+                    if child then pcall(function() child.Enabled = false end) end
+                end)
+            end
+        end
+        Debris:AddItem(cloneParent, 4)
+    end
+end
+
+local function makeChamsForCharacter(char, duration)
+    if not char then return end
+    local clones = {}
+    for _,part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Transparency < 1 then
+            local c = Instance.new("Part")
+            c.Name = "YounaCham_"..part.Name
+            c.Size = part.Size
+            c.CFrame = part.CFrame
+            c.Anchored = true
+            c.CanCollide = false
+            c.Material = (Enum.Material[Y.visuals.chamMaterial] or Enum.Material.Neon)
+            c.Color = (Y.visuals.chamColor or Color3.fromRGB(200,50,50))
+            c.Transparency = Y.visuals.chamTransparency or 0.3
+            c.Parent = workspace
+            table.insert(clones, c)
+        end
+    end
+    task.delay(duration or 1, function()
+        for _,v in pairs(clones) do safeDestroy(v) end
+    end)
+end
+
+local function makeHitSkeleton(char, color, duration)
+    if not char then return end
+    local lines = {}
+    local function try(name) return char:FindFirstChild(name) end
+    local points = {
+        Head = try("Head"),
+        Torso = try("Torso") or try("UpperTorso") or try("LowerTorso") or try("HumanoidRootPart"),
+        LeftArm = try("LeftUpperArm") or try("LeftArm") or try("LeftHand"),
+        RightArm = try("RightUpperArm") or try("RightArm") or try("RightHand"),
+        LeftLeg = try("LeftUpperLeg") or try("LeftLeg") or try("LeftFoot"),
+        RightLeg = try("RightUpperLeg") or try("RightLeg") or try("RightFoot")
+    }
+    local function drawLine(a,b)
+        if not a or not b then return end
+        local L = Drawing.new("Line")
+        L.Thickness = 2
+        L.Color = color or Color3.fromRGB(255,0,0)
+        L.Visible = true
+        table.insert(lines, { line = L, a = a, b = b })
+    end
+    drawLine(points.Head, points.Torso)
+    drawLine(points.Torso, points.LeftArm)
+    drawLine(points.Torso, points.RightArm)
+    drawLine(points.Torso, points.LeftLeg)
+    drawLine(points.Torso, points.RightLeg)
+    local conn = RunService.RenderStepped:Connect(function()
+        for _,entry in pairs(lines) do
+            local a = entry.a
+            local b = entry.b
+            if a and b and a.Parent and b.Parent then
+                local sa = Camera:WorldToViewportPoint(a.Position)
+                local sb = Camera:WorldToViewportPoint(b.Position)
+                entry.line.From = Vector2.new(sa.X, sa.Y)
+                entry.line.To = Vector2.new(sb.X, sb.Y)
+            else
+                entry.line.Visible = false
+            end
+        end
+    end)
+    task.delay(duration or 1, function()
+        if conn and conn.Disconnect then conn:Disconnect() end
+        for _,entry in pairs(lines) do
+            if entry.line then safeDestroy(entry.line) end
+        end
+    end)
+end
+
+local function isKO(character)
+    if not character then return false end
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    if hum.Health <= 0 then return true end
+    local st = hum:GetState()
+    if st == Enum.HumanoidStateType.Dead then return true end
+    return false
+end
+
+local health_cache = {}
+local function refresh_health_cache()
+    for _,p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local h = 0
+            if p.Character and p.Character:FindFirstChildOfClass("Humanoid") then
+                h = p.Character:FindFirstChildOfClass("Humanoid").Health
+            end
+            health_cache[p] = h
+        end
+    end
+end
+
+refresh_health_cache()
+Players.PlayerAdded:Connect(function(plr) health_cache[plr] = 0 end)
+Players.PlayerRemoving:Connect(function(plr) health_cache[plr] = nil end)
+
+local function spawnTrailBetween(a,b,color,lifetime,thickness,texture)
+    if not a or not b then return end
+    local p0 = Instance.new("Part")
+    p0.Anchored = true
+    p0.CanCollide = false
+    p0.Size = Vector3.new(0.2,0.2,0.2)
+    p0.CFrame = CFrame.new(a)
+    p0.Transparency = 1
+    p0.Parent = workspace
+    local att0 = Instance.new("Attachment", p0)
+    local p1 = Instance.new("Part")
+    p1.Anchored = true
+    p1.CanCollide = false
+    p1.Size = Vector3.new(0.2,0.2,0.2)
+    p1.CFrame = CFrame.new(b)
+    p1.Transparency = 1
+    p1.Parent = workspace
+    local att1 = Instance.new("Attachment", p1)
+    local beam = Instance.new("Beam")
+    beam.Attachment0 = att0
+    beam.Attachment1 = att1
+    beam.FaceCamera = true
+    beam.Width0 = thickness or 0.2
+    beam.Width1 = thickness or 0.2
+    beam.Texture = texture or ""
+    beam.Color = ColorSequence.new(color or Color3.fromRGB(255,0,0))
+    beam.Transparency = NumberSequence.new(Y.visuals.trailTransparency or 0.5)
+    beam.Parent = p0
+    Debris:AddItem(p0, lifetime or 1)
+    Debris:AddItem(p1, lifetime or 1)
+end
+
+
+local function GetCharacterRoot(plr)
+    if not plr then return nil end
+    local ch = plr.Character
+    if not ch then return nil end
+    return ch:FindFirstChild("HumanoidRootPart") or ch:FindFirstChild("UpperTorso") or ch:FindFirstChild("LowerTorso")
+end
+
+local function GetHitPart(plr, hitPartName)
+    if not plr or not plr.Character then return nil end
+    local name = hitPartName or "HumanoidRootPart"
+    local part = plr.Character:FindFirstChild(hitPartName) or plr.Character:FindFirstChild("HumanoidRootPart")
+    return part
+end
+
+local function GetPredictedPosition(part, prediction)
+    if not part then return nil end
+    local pred = prediction or 0.13
+    return part.Position + (part.Velocity * pred)
+end
+
+local function InFOV(position, fov)
+    if not position then return false end
+    local screenPos, on = Camera:WorldToViewportPoint(position)
+    if not on then return false end
+    local center = Camera.ViewportSize / 2
+    local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+    return dist <= (fov or 120)
+end
+
+local function GetClosestToMouse(fov)
+    local best, bestDist = nil, math.huge
+    local center = Camera.ViewportSize / 2
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChildOfClass("Humanoid") then
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local root = GetCharacterRoot(p)
+                if root then
+                    local sp, on = Camera:WorldToViewportPoint(root.Position)
+                    if on then
+                        local d = (Vector2.new(sp.X, sp.Y) - center).Magnitude
+                        if (not fov) or d <= fov then
+                            if d < bestDist then bestDist = d; best = p end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function GetClosestVisibleInFOV(fov)
+    local best, bestDist = nil, math.huge
+    local center = Camera.ViewportSize / 2
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChildOfClass("Humanoid") then
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local root = GetCharacterRoot(p)
+                if root then
+                    local sp, on = Camera:WorldToViewportPoint(root.Position)
+                    if on then
+                        local d = (Vector2.new(sp.X, sp.Y) - center).Magnitude
+                        if (not fov) or d <= fov then
+                            local origin = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") or LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                            local visible = true
+                            if origin then visible = isVisible(origin, root) end
+                            if visible and d < bestDist then bestDist = d; best = p end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function AcquireCamlockTarget()
+    local fov = Y.Targetaim and Y.Targetaim.fov or 120
+    local t = GetClosestVisibleInFOV(fov)
+    if not t then t = GetClosestToMouse(fov) end
+    return t
+end
+
+local function AcquireTargetAimTarget()
+    local fov = Y.Targetaim and Y.Targetaim.fov or 120
+    return GetClosestToMouse(fov)
+end
+
+local function ToggleCamlockState(state)
+    Y.Camlock.enabled = state and true or false
+    if not Y.Camlock.enabled then
+        Y.Camlock.target = nil
+        Y.Targetaim.target = nil
+    else
+        local t = AcquireCamlockTarget()
+        if t then
+            Y.Camlock.target = t
+            Y.Targetaim.target = t
+        else
+            Y.Camlock.enabled = false
+            Y.Camlock.target = nil
+            Y.Targetaim.target = nil
+        end
+    end
+end
+
+local function AutoWallHeartbeat()
+    if not (Y.Camlock and Y.Camlock.enabled) then return end
+    local target = Y.Camlock.target
+    if not target or not target.Character then
+        if Y.AntiWall.AutoWall then
+            local t = AcquireCamlockTarget()
+            if t then
+                Y.Camlock.target = t
+                Y.Targetaim.target = t
+            end
+        end
+        return
+    end
+    local origin = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Head") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
+    local root = GetCharacterRoot(target)
+    if not origin or not root then return end
+    local visible = isVisible(origin, root)
+    if Y.AntiWall.AutoWall then
+        if not visible then
+            Y.Camlock.enabled = false
+            Y.Targetaim.enabled = false
+        else
+            if not Y.Camlock.enabled then Y.Camlock.enabled = true end
+            if not Y.Targetaim.enabled then Y.Targetaim.enabled = true end
+        end
+    end
+    if Y.AntiWall.WallCheck then
+        if not visible then
+            Y.Camlock.target = nil
+            Y.Targetaim.target = nil
+        end
+    end
+end
+
+local function ResolveVelocity(part)
+    if not part then return Vector3.new() end
+    local vel = part.Velocity or Vector3.new()
+    if Y.Targetaim and Y.Targetaim.resolver then
+        local hum = part.Parent and part.Parent:FindFirstChildOfClass("Humanoid")
+        if hum and hum.MoveDirection and hum.MoveDirection.Magnitude > 0 then
+            local speed = vel.Magnitude
+            return hum.MoveDirection.Unit * speed
+        end
+    end
+    return vel
+end
+
+local camlockConn
+camlockConn = RunService.RenderStepped:Connect(function()
+    if Y.Camlock and Y.Camlock.enabled and Y.Camlock.target and Y.Camlock.target.Character then
+        local part = GetHitPart(Y.Camlock.target, Y.Camlock.CurrentHitPart or Y.Camlock.HitPart)
+        if not part then return end
+        local vel = ResolveVelocity(part)
+        local predicted = part.Position + (vel * (Y.Camlock.Prediction or 0.13))
+        local camGoal = CFrame.new(Camera.CFrame.Position, predicted)
+        Camera.CFrame = Camera.CFrame:Lerp(camGoal, clamp(Y.Camlock.Smoothness or 0.25, 0, 1))
+    end
+end)
+
+local function GetTargetAimPosition()
+    if not (Y.Targetaim and Y.Targetaim.enabled and Y.Targetaim.target and Y.Targetaim.target.Character) then return nil end
+    local part = GetHitPart(Y.Targetaim.target, Y.Targetaim.CurrentHitPart or Y.Targetaim.HitPart)
+    if not part then return nil end
+    local vel = ResolveVelocity(part)
+    local predicted = part.Position + (vel * (Y.Targetaim.prediction or 0.13))
+    return predicted
+end
+
+getgenv().Youna_TargetAimPosition = nil
+local targetAimUpdater = RunService.Heartbeat:Connect(function()
+    if Y.Targetaim and Y.Targetaim.enabled then
+        local pos = GetTargetAimPosition()
+        getgenv().Youna_TargetAimPosition = pos
+    else
+        getgenv().Youna_TargetAimPosition = nil
+    end
+end)
+
+local function IsAirborne(plr)
+    if not plr or not plr.Character then return false end
+    local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    local state = hum:GetState()
+    return (state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping)
+end
+
+local autoAirConn
+autoAirConn = RunService.Heartbeat:Connect(function()
+    if not (Y.Targetaim and Y.Targetaim.enabled and Y.Targetaim.autoAir) then return end
+    local target = Y.Targetaim.target or AcquireTargetAimTarget()
+    if target and target.Character then
+        if IsAirborne(target) then
+            local pos = GetTargetAimPosition()
+            if pos then
+                getgenv().Youna_TargetAimPosition = pos
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function(dt)
+    if Y.Camlock.HitPart == "Random" then
+        timers.Camlock = timers.Camlock + dt
+        if timers.Camlock >= (Y.Settings.RandomDelay or 0.5) then
+            timers.Camlock = 0
+            Y.Camlock.CurrentHitPart = partsList[math.random(1, #partsList)]
+        end
+    else
+        Y.Camlock.CurrentHitPart = Y.Camlock.HitPart
+    end
+
+    if Y.Targetaim.HitPart == "Random" then
+        timers.Targetaim = timers.Targetaim + dt
+        if timers.Targetaim >= (Y.Settings.RandomDelay or 0.5) then
+            timers.Targetaim = 0
+            Y.Targetaim.CurrentHitPart = partsList[math.random(1, #partsList)]
+        end
+    else
+        Y.Targetaim.CurrentHitPart = Y.Targetaim.HitPart
+    end
+
+    if Y.AntiWall and Y.AntiWall.AutoWall and (Y.Camlock and (Y.Camlock.enabled or Y.Camlock.target)) then
+        AutoWallHeartbeat()
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        if Y.Camlock and Y.Camlock.enabled then
+            ToggleCamlockState(false)
+        else
+            ToggleCamlockState(true)
+        end
+    end
+end)
+
+
+local espTable = {}
+local espConnections = {}
+
+local function makeESPForPlayer(plr)
+    if not plr then return end
+    if espTable[plr] then return espTable[plr] end
+
+    local entry = {
+        box = Drawing.new("Quad"),
+        tracer = Drawing.new("Line"),
+        name = Drawing.new("Text"),
+        health = Drawing.new("Text"),
+        dot = Drawing.new("Circle"),
+        skeleton = {},
+        visible = false,
+        highlight = nil
+    }
+
+    entry.box.Filled = false
+    entry.box.Visible = false
+    entry.box.Thickness = 1
+
+    entry.tracer.Thickness = 1
+    entry.tracer.Visible = false
+
+    entry.name.Center = true
+    entry.name.Size = 14
+    entry.name.Visible = false
+
+    entry.health.Center = true
+    entry.health.Size = 12
+    entry.health.Visible = false
+
+    entry.dot.Visible = false
+    entry.dot.Radius = 4
+
+    espTable[plr] = entry
+    return entry
+end
+
+local function removeESPForPlayer(plr)
+    local e = espTable[plr]
+    if not e then return end
+    pcall(function()
+        if e.box then e.box.Visible = false; e.box:Remove() end
+        if e.tracer then e.tracer.Visible = false; e.tracer:Remove() end
+        if e.name then e.name.Visible = false; e.name:Remove() end
+        if e.health then e.health.Visible = false; e.health:Remove() end
+        if e.dot then e.dot.Visible = false; e.dot:Remove() end
+        for _,ln in pairs(e.skeleton) do if ln and ln.line then ln.line:Remove() end end
+        if e.highlight then pcall(function() e.highlight:Destroy() end) end
+    end)
+    espTable[plr] = nil
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    task.delay(0.5, function()
+        if plr and plr ~= LocalPlayer then makeESPForPlayer(plr) end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    removeESPForPlayer(plr)
+end)
+
+local function worldToScreen(vec)
+    local s, on = Camera:WorldToViewportPoint(vec)
+    return Vector2.new(s.X, s.Y), on
+end
+
+local function getBoundingBoxForCharacter(char)
+    if not char then return nil end
+    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("LowerTorso")
+    local head = char:FindFirstChild("Head")
+    if not root or not head then return nil end
+
+    local top = head.Position + Vector3.new(0, 0.4, 0)
+    local bottom = root.Position - Vector3.new(0, 2.2, 0)
+
+    local corners = {
+        Vector3.new(top.X - 0.5, top.Y, top.Z - 0.25),
+        Vector3.new(top.X + 0.5, top.Y, top.Z - 0.25),
+        Vector3.new(top.X + 0.5, top.Y, top.Z + 0.25),
+        Vector3.new(top.X - 0.5, top.Y, top.Z + 0.25),
+        Vector3.new(bottom.X - 0.5, bottom.Y, bottom.Z - 0.25),
+        Vector3.new(bottom.X + 0.5, bottom.Y, bottom.Z - 0.25),
+        Vector3.new(bottom.X + 0.5, bottom.Y, bottom.Z + 0.25),
+        Vector3.new(bottom.X - 0.5, bottom.Y, bottom.Z + 0.25)
+    }
+
+    return corners
+end
+
+local function updateESPEntry(plr, entry)
+    if not plr or not entry then return end
+    if not plr.Character or not plr.Character:FindFirstChildOfClass("Humanoid") then
+        entry.box.Visible = false
+        entry.tracer.Visible = false
+        entry.name.Visible = false
+        entry.health.Visible = false
+        entry.dot.Visible = false
+        for _,ln in pairs(entry.skeleton) do if ln.line then ln.line.Visible = false end end
+        if entry.highlight then entry.highlight.Enabled = false end
+        return
+    end
+
+    local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    local head = plr.Character:FindFirstChild("Head")
+    local root = GetCharacterRoot(plr)
+    if not head or not root then return end
+
+    local origin = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Head") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
+    local visible = true
+    if origin then visible = isVisible(origin, root) end
+    entry.visible = visible
+
+    local col = visible and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+    entry.box.Color = col
+    entry.tracer.Color = col
+    entry.name.Color = col
+    entry.health.Color = col
+    entry.dot.Color = col
+
+    local corners = getBoundingBoxForCharacter(plr.Character)
+    if corners then
+        local screenPoints, onScreen = {}, true
+        for i,pt in ipairs(corners) do
+            local sc, v = Camera:WorldToViewportPoint(pt)
+            if not v then onScreen = false end
+            table.insert(screenPoints, Vector2.new(sc.X, sc.Y))
+        end
+
+        local top = { screenPoints[1], screenPoints[2], screenPoints[3], screenPoints[4] }
+        local bottom = { screenPoints[5], screenPoints[6], screenPoints[7], screenPoints[8] }
+
+        local minX, minY = math.huge, math.huge
+        local maxX, maxY = -math.huge, -math.huge
+        for _,p in ipairs(screenPoints) do
+            minX = math.min(minX, p.X)
+            minY = math.min(minY, p.Y)
+            maxX = math.max(maxX, p.X)
+            maxY = math.max(maxY, p.Y)
+        end
+
+        local tl = Vector2.new(minX, minY)
+        local tr = Vector2.new(maxX, minY)
+        local br = Vector2.new(maxX, maxY)
+        local bl = Vector2.new(minX, maxY)
+
+        entry.box.PointA = tl
+        entry.box.PointB = tr
+        entry.box.PointC = br
+        entry.box.PointD = bl
+        entry.box.Visible = (Y.BoxESP == true)
+
+        entry.name.Text = plr.Name
+        entry.name.Position = Vector2.new((minX + maxX) / 2, minY - 14)
+        entry.name.Visible = (Y.BoxESP == true or Y.SkeletonESP == true)
+
+        entry.health.Text = string.format("%.0f", hum.Health)
+        entry.health.Position = Vector2.new((minX + maxX) / 2, maxY + 6)
+        entry.health.Visible = (Y.HealthBar == true or Y.BoxESP == true)
+
+        local rootScreen, on = Camera:WorldToViewportPoint(root.Position)
+        entry.tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+        entry.tracer.To = Vector2.new(rootScreen.X, rootScreen.Y)
+        entry.tracer.Visible = (Y.TracerESP == true)
+
+        if Y.predVisualizer and Y.predVisualizer ~= "None" and (Y.predVisualizer == "Dot" or Y.predVisualizer == "All") then
+            local part = GetHitPart(plr, (plr == Y.Camlock.target and Y.Camlock.CurrentHitPart) or (plr == Y.Targetaim.target and Y.Targetaim.CurrentHitPart) or Y.Targetaim.HitPart)
+            if part then
+                local vel = ResolveVelocity(part)
+                local predicted = part.Position + (vel * (Y.Targetaim.prediction or 0.13))
+                local sc, on2 = Camera:WorldToViewportPoint(predicted)
+                entry.dot.Position = Vector2.new(sc.X, sc.Y)
+                entry.dot.Visible = true
+                entry.dot.Radius = 4
+            else
+                entry.dot.Visible = false
+            end
+        else
+            entry.dot.Visible = false
+        end
+
+        if Y.SkeletonESP == true then
+            if #entry.skeleton == 0 then
+                local parts = {"Head","Torso","LeftUpperArm","RightUpperArm","LeftUpperLeg","RightUpperLeg","LeftHand","RightHand","LeftFoot","RightFoot","UpperTorso","LowerTorso","HumanoidRootPart"}
+                for i=1, #parts do
+                    local L = Drawing.new("Line")
+                    L.Thickness = 2
+                    L.Visible = true
+                    L.Color = col
+                    table.insert(entry.skeleton, { line = L, a = parts[i] })
+                end
+            end
+            local function partPos(name)
+                local p = plr.Character:FindFirstChild(name)
+                if not p then
+                    if name == "Torso" then p = plr.Character:FindFirstChild("UpperTorso") or plr.Character:FindFirstChild("LowerTorso") end
+                end
+                if p then
+                    local s = Camera:WorldToViewportPoint(p.Position)
+                    return Vector2.new(s.X, s.Y), true
+                end
+                return Vector2.new(0,0), false
+            end
+
+            local mapping = {
+                {"Head","Torso"},
+                {"Torso","LeftUpperArm"},
+                {"Torso","RightUpperArm"},
+                {"Torso","LeftUpperLeg"},
+                {"Torso","RightUpperLeg"},
+                {"LeftUpperArm","LeftHand"},
+                {"RightUpperArm","RightHand"},
+                {"LeftUpperLeg","LeftFoot"},
+                {"RightUpperLeg","RightFoot"}
+            }
+
+            if #entry.skeleton < #mapping then
+                for i = #entry.skeleton + 1, #mapping do
+                    local L = Drawing.new("Line")
+                    L.Thickness = 2
+                    L.Visible = true
+                    L.Color = col
+                    table.insert(entry.skeleton, { line = L, a = mapping[i][1], b = mapping[i][2] })
+                end
+            end
+
+            for i,mp in ipairs(mapping) do
+                local aName, bName = mp[1], mp[2]
+                local apos, aok = partPos(aName)
+                local bpos, bok = partPos(bName)
+                local sLine = entry.skeleton[i]
+                if sLine and sLine.line then
+                    if aok and bok then
+                        sLine.line.From = apos
+                        sLine.line.To = bpos
+                        sLine.line.Color = col
+                        sLine.line.Visible = true
+                    else
+                        sLine.line.Visible = false
+                    end
+                end
+            end
+        else
+            for _,ln in pairs(entry.skeleton) do if ln.line then ln.line.Visible = false end end
+        end
+
+        if Y.Chams == true then
+            if not entry.highlight or not entry.highlight.Parent then
+                local h = Instance.new("Highlight")
+                h.Adornee = plr.Character
+                h.FillColor = Y.visuals.chamColor or Color3.fromRGB(200,50,50)
+                h.OutlineColor = Color3.new(0,0,0)
+                h.FillTransparency = Y.visuals.chamTransparency or 0.3
+                h.Parent = CoreGui
+                entry.highlight = h
+            else
+                entry.highlight.Enabled = true
+                entry.highlight.FillColor = Y.visuals.chamColor or Color3.fromRGB(200,50,50)
+                entry.highlight.FillTransparency = Y.visuals.chamTransparency or 0.3
+            end
+        else
+            if entry.highlight then
+                pcall(function() entry.highlight.Enabled = false end)
+            end
+        end
+
+    else
+        entry.box.Visible = false
+        entry.tracer.Visible = false
+        entry.name.Visible = false
+        entry.health.Visible = false
+        entry.dot.Visible = false
+        for _,ln in pairs(entry.skeleton) do if ln.line then ln.line.Visible = false end end
+        if entry.highlight then entry.highlight.Enabled = false end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if not Camera then return end
+    for plr,entry in pairs(espTable) do
+        if plr and plr ~= LocalPlayer then
+            updateESPEntry(plr, entry)
+        end
+    end
+
+    updateCrosshair()
+end)
+
+RunService.Heartbeat:Connect(function()
+    for _,p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+            local prev = health_cache[p] or 0
+            local curr = hum and hum.Health or prev
+            if curr < prev then
+                local head = p.Character and p.Character:FindFirstChild("Head")
+                local pos = head and head.Position or (GetCharacterRoot(p) and GetCharacterRoot(p).Position)
+                if pos then PlayHitFeedbackAt(pos) end
+
+                if Y.visuals.hitChams then
+                    makeChamsForCharacter(p.Character, 0.9)
+                end
+                if Y.visuals.hitSkeleton then
+                    makeHitSkeleton(p.Character, Color3.fromRGB(255,100,100), 0.9)
+                end
+            end
+            health_cache[p] = curr
+        end
+    end
+end)
+
+local predVisualParts = {}
+local function spawnPredChamAt(position, color, duration)
+    if not position then return end
+    local p = Instance.new("Part")
+    p.Anchored = true
+    p.CanCollide = false
+    p.Size = Vector3.new(0.6,0.6,0.6)
+    p.Material = Enum.Material.Neon
+    p.Color = color or Color3.fromRGB(255,0,0)
+    p.CFrame = CFrame.new(position)
+    p.Parent = workspace
+    Debris:AddItem(p, duration or 0.6)
+    return p
+end
+
+
+Y.Rage = Y.Rage or { WalkSpeedValue = 50, JumpPowerValue = 100 }
+
+local ok, library = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/.../CriminalityLibSource.lua"))()
+end)
+if not ok or not library then
+    warn("Failed to load UI library - make sure URL is correct.")
+else
+    if not getgenv().Youna_Window then
+        getgenv().Youna_Window = library.new("Youna67", "YounaConfig")
+    end
+    local window = getgenv().Youna_Window
+
+    local combatTab = window.new_tab("rbxassetid://4483346003")
+    local rageTab = window.new_tab("rbxassetid://4384394254")
+    local visualTab = window.new_tab("rbxassetid://10802202968")
+    local settingsTab = window.new_tab("rbxassetid://17642264140")
+    local buttonsTab = window.new_tab("rbxassetid://4483345879")
+
+    local function tonum(v, fallback)
+        local n = tonumber(v)
+        if n then return n end
+        return fallback
+    end
+
+    do
+        local s_left = combatTab.new_sector("Combat", "Left")
+        s_left.element("Toggle", "Camlock", { default = Y.Camlock.enabled }, function(v)
+            Y.Camlock.enabled = v.Toggle
+            if v.Toggle then ToggleCamlockState(true) else ToggleCamlockState(false) end
+        end)
+        s_left.element("Toggle", "Target Aim", { default = Y.Targetaim.enabled }, function(v)
+            Y.Targetaim.enabled = v.Toggle
+            if not v.Toggle then getgenv().Youna_TargetAimPosition = nil end
+        end)
+        s_left.element("Dropdown", "HitPart", { options = { "HumanoidRootPart","Head","Torso","UpperTorso","LowerTorso","Random" }, default = Y.Targetaim.HitPart or "HumanoidRootPart" }, function(v)
+            Y.Targetaim.HitPart = v.Value
+        end)
+        s_left.element("TextBox", "Prediction", { default = tostring(Y.Targetaim.prediction or 0.13) }, function(v)
+            local n = tonum(v.Text, Y.Targetaim.prediction or 0.13)
+            Y.Targetaim.prediction = n
+        end)
+        s_left.element("TextBox", "Smoothness", { default = tostring(Y.Camlock.Smoothness or 0.25) }, function(v)
+            local n = tonum(v.Text, Y.Camlock.Smoothness or 0.25)
+            Y.Camlock.Smoothness = n
+        end)
+        s_left.element("Toggle", "Resolver", { default = Y.Targetaim.resolver }, function(v)
+            Y.Targetaim.resolver = v.Toggle
+        end)
+        s_left.element("Toggle", "AutoWall (Camlock only)", { default = Y.AntiWall.AutoWall }, function(v)
+            Y.AntiWall.AutoWall = v.Toggle
+        end)
+    end
+
+    do
+        local r_left = rageTab.new_sector("Rage", "Left")
+        r_left.element("Toggle", "Orbit", { default = Y.orbit.enabled }, function(v) Y.orbit.enabled = v.Toggle end)
+        r_left.element("TextBox", "Orbit Distance", { default = tostring(Y.orbit.distance) }, function(v)
+            Y.orbit.distance = tonum(v.Text, Y.orbit.distance)
+        end)
+        r_left.element("TextBox", "Orbit Height", { default = tostring(Y.orbit.height) }, function(v)
+            Y.orbit.height = tonum(v.Text, Y.orbit.height)
+        end)
+        r_left.element("TextBox", "Orbit Speed", { default = tostring(Y.orbit.speed) }, function(v)
+            Y.orbit.speed = tonum(v.Text, Y.orbit.speed)
+        end)
+        r_left.element("TextBox", "WalkSpeed Value", { default = tostring(Y.Rage.WalkSpeedValue) }, function(v)
+            Y.Rage.WalkSpeedValue = tonum(v.Text, Y.Rage.WalkSpeedValue)
+        end)
+        r_left.element("TextBox", "JumpPower Value", { default = tostring(Y.Rage.JumpPowerValue) }, function(v)
+            Y.Rage.JumpPowerValue = tonum(v.Text, Y.Rage.JumpPowerValue)
+        end)
+        r_left.element("Toggle", "Floating WS/JP Buttons Visible", { default = (Y.FloatingButtons.WS or Y.FloatingButtons.JP) }, function(v)
+            Y.FloatingButtons.WS = v.Toggle
+            Y.FloatingButtons.JP = v.Toggle
+            create_or_remove_all_floating_buttons()
+        end)
+        r_left.element("Toggle", "AutoShoot", { default = Y.AutoShoot.enabled }, function(v) Y.AutoShoot.enabled = v.Toggle end)
+    end
+
+    do
+        local v_left = visualTab.new_sector("ESP & Visuals", "Left")
+        v_left.element("Toggle", "Box ESP", { default = (Y.BoxESP == true) }, function(v) Y.BoxESP = v.Toggle end)
+        v_left.element("Toggle", "Tracer ESP", { default = (Y.TracerESP == true) }, function(v) Y.TracerESP = v.Toggle end)
+        v_left.element("Toggle", "Skeleton ESP", { default = (Y.SkeletonESP == true) }, function(v) Y.SkeletonESP = v.Toggle end)
+        v_left.element("Toggle", "Chams", { default = (Y.Chams == true) }, function(v) Y.Chams = v.Toggle end)
+        v_left.element("Toggle", "Health Bars", { default = (Y.HealthBar == true) }, function(v) Y.HealthBar = v.Toggle end)
+        local v_right = visualTab.new_sector("Crosshair", "Right")
+        v_right.element("Toggle", "Enable Crosshair", { default = Y.crosshair.enabled }, function(v) Y.crosshair.enabled = v.Toggle end)
+        v_right.element("TextBox", "Min Radius", { default = tostring(Y.crosshair.minRadius) }, function(v) local n = tonum(v.Text, Y.crosshair.minRadius); if n then Y.crosshair.minRadius = n end end)
+        v_right.element("TextBox", "Max Radius", { default = tostring(Y.crosshair.maxRadius) }, function(v) local n = tonum(v.Text, Y.crosshair.maxRadius); if n then Y.crosshair.maxRadius = n end end)
+        v_right.element("TextBox", "Spin Speed", { default = tostring(Y.crosshair.spin_speed) }, function(v) local n = tonum(v.Text, Y.crosshair.spin_speed); if n then Y.crosshair.spin_speed = n end end)
+        local hit_sec = visualTab.new_sector("Hit Feedback", "Right")
+        local hlist = {"None","Nova Impact","Cosmic Explosion","Crescent Slash","Slash","Atomic Slash","Coom"}
+        hit_sec.element("Dropdown", "Hit Effect", { options = hlist, default = (Y.visuals.hitFeedback or "None") }, function(v) Y.visuals.hitFeedback = v.Value end)
+        local hs = {"None"}
+        for k,_ in pairs(HITSOUNDS) do table.insert(hs, k) end
+        hit_sec.element("Dropdown", "Hit Sound", { options = hs, default = (Y.visuals.selectedHitSound or "None") }, function(v) Y.visuals.selectedHitSound = v.Value end)
+        hit_sec.element("Toggle", "HitChams", { default = Y.visuals.hitChams }, function(v) Y.visuals.hitChams = v.Toggle end)
+        hit_sec.element("Toggle", "HitSkeleton", { default = Y.visuals.hitSkeleton }, function(v) Y.visuals.hitSkeleton = v.Toggle end)
+        local pv = visualTab.new_sector("Prediction Visualizer", "Right")
+        pv.element("Dropdown", "Visualizer", { options = {"None","Dot","Cham","All"}, default = (Y.predVisualizer or "None") }, function(v) Y.predVisualizer = v.Value end)
+    end
+
+    do
+        local s_left = settingsTab.new_sector("Settings", "Left")
+        s_left.element("TextBox", "Title", { default = Y.Settings.Title }, function(v) Y.Settings.Title = v.Text end)
+        s_left.element("Toggle", "Show Title", { default = Y.Settings.TitleEnabled }, function(v) Y.Settings.TitleEnabled = v.Toggle end)
+        s_left.element("Button", "Save Config", {}, function() save_config("default") end)
+        s_left.element("Button", "Load Config", {}, function() load_config("default") end)
+        s_left.element("Button", "Delete Config", {}, function() delete_config("default") end)
+        s_left.element("Dropdown", "Theme", { options = {"Red+Black","Blue+Black","Green+Black"}, default = Y.Settings.Theme }, function(v)
+            Y.Settings.Theme = v.Value
+        end)
+    end
+
+    do
+        local b_left = buttonsTab.new_sector("Floating Buttons", "Left")
+        b_left.element("Toggle", "CFrame Button", { default = Y.FloatingButtons.CFrame }, function(v) Y.FloatingButtons.CFrame = v.Toggle; create_or_remove_all_floating_buttons() end)
+        b_left.element("Toggle", "AutoShoot Button", { default = Y.FloatingButtons.Auto }, function(v) Y.FloatingButtons.Auto = v.Toggle; create_or_remove_all_floating_buttons() end)
+        b_left.element("Toggle", "Camlock Button", { default = Y.FloatingButtons.Cam }, function(v) Y.FloatingButtons.Cam = v.Toggle; create_or_remove_all_floating_buttons() end)
+        b_left.element("Toggle", "WalkSpeed Button", { default = Y.FloatingButtons.WS }, function(v) Y.FloatingButtons.WS = v.Toggle; create_or_remove_all_floating_buttons() end)
+        b_left.element("Toggle", "JumpPower Button", { default = Y.FloatingButtons.JP }, function(v) Y.FloatingButtons.JP = v.Toggle; create_or_remove_all_floating_buttons() end)
+    end
+end
+
+local floater_refs = {}
+local CAMLOCK_ICONS = { enabled = "rbxassetid://104520233995589", disabled = "rbxassetid://136474114676519" }
+
+local function make_floating_button(key, opts)
+    local existing = floater_refs[key]
+    if existing and existing.sg then return existing end
+
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "YounaFloat_" .. key
+    sg.ResetOnSpawn = false
+    sg.Parent = CoreGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = opts.size or UDim2.new(0,110,0,44)
+    frame.Position = opts.pos or UDim2.new(0.02,0,0.8,0)
+    frame.BackgroundTransparency = 1
+    frame.Parent = sg
+    frame.Active = true
+
+    local btn
+    if opts.isImage then
+        btn = Instance.new("ImageButton")
+        btn.Image = opts.imageId or ""
+        btn.ScaleType = Enum.ScaleType.Fit
+    else
+        btn = Instance.new("TextButton")
+        btn.Text = opts.text or ""
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 14
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+    end
+
+    btn.Name = "TextButton"
+    btn.Size = UDim2.new(0, frame.Size.X.Offset, 0, frame.Size.Y.Offset)
+    btn.Position = UDim2.new(0,0,0,0)
+    btn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    btn.BackgroundTransparency = 0.15
+    btn.AutoButtonColor = false
+    btn.Parent = frame
+
+    local uic = Instance.new("UICorner", btn)
+    uic.CornerRadius = UDim.new(0, 12)
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = Y.visuals.chamColor or Color3.fromRGB(200,50,50)
+    stroke.Thickness = 1
+
+    local dragging, dragStart, startPos, dragInput
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    Y.FloatingPositions = Y.FloatingPositions or {}
+                    Y.FloatingPositions[key] = { x = frame.Position.X.Scale, xoff = frame.Position.X.Offset, y = frame.Position.Y.Scale, yoff = frame.Position.Y.Offset }
+                    pcall(function() save_config("default") end)
+                end
+            end)
+        end
+    end)
+
+    btn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    floater_refs[key] = { sg = sg, frame = frame, btn = btn }
+    local p = Y.FloatingPositions and Y.FloatingPositions[key]
+    if p and p.xoff and p.yoff then
+        frame.Position = UDim2.new(p.x or 0, p.xoff, p.y or 0, p.yoff)
+    end
+
+    return floater_refs[key]
+end
+
+local function destroy_floating_button(key)
+    if floater_refs[key] and floater_refs[key].sg then
+        safeDestroy(floater_refs[key].sg)
+        floater_refs[key] = nil
+    end
+end
+
+local function create_or_remove_all_floating_buttons()
+    if Y.FloatingButtons.CFrame then
+        local ref = make_floating_button("CFrame", { pos = UDim2.new(0.82,0,0.82,0), size = UDim2.new(0,110,0,44), text = "CFrame" })
+        ref.btn.MouseButton1Click:Connect(function()
+            Y.CFrameSpeed.enabled = not Y.CFrameSpeed.enabled
+            ref.btn.Text = (Y.CFrameSpeed.enabled and "CFrame: On" or "CFrame: Off")
+        end)
+    else
+        destroy_floating_button("CFrame")
+    end
+
+    if Y.FloatingButtons.Auto then
+        local ref = make_floating_button("Auto", { pos = UDim2.new(0.02,0,0.82,0), size = UDim2.new(0,110,0,44), text = "Auto" })
+        ref.btn.MouseButton1Click:Connect(function()
+            Y.AutoShoot.enabled = not Y.AutoShoot.enabled
+            ref.btn.Text = (Y.AutoShoot.enabled and "Auto: On" or "Auto: Off")
+        end)
+    else
+        destroy_floating_button("Auto")
+    end
+
+    if Y.FloatingButtons.Cam then
+        local ref = make_floating_button("Cam", { pos = UDim2.new(0.9,-35,0.6,-35), size = UDim2.new(0,70,0,70), isImage = true, imageId = (Y.Camlock.enabled and CAMLOCK_ICONS.enabled or CAMLOCK_ICONS.disabled) })
+        ref.btn.MouseButton1Click:Connect(function()
+            Y.Camlock.enabled = not Y.Camlock.enabled
+            if Y.Camlock.enabled then
+                local t = AcquireCamlockTarget()
+                if t then Y.Camlock.target = t; Y.Targetaim.target = t; ref.btn.Image = CAMLOCK_ICONS.enabled else
+                    Y.Camlock.enabled = false; Y.Camlock.target = nil; Y.Targetaim.target = nil; ref.btn.Image = CAMLOCK_ICONS.disabled
+                end
+            else
+                Y.Camlock.target = nil; Y.Targetaim.target = nil; ref.btn.Image = CAMLOCK_ICONS.disabled
+            end
+        end)
+    else
+        destroy_floating_button("Cam")
+    end
+
+    if Y.FloatingButtons.WS then
+        local ref = make_floating_button("WS", { pos = UDim2.new(0.02,0,0.68,0), size = UDim2.new(0,110,0,44), text = "WS" })
+        ref.btn.MouseButton1Click:Connect(function()
+            Y.FloatingButtons.WS_State = not Y.FloatingButtons.WS_State
+            ref.btn.Text = (Y.FloatingButtons.WS_State and ("WS: "..tostring(Y.Rage.WalkSpeedValue)) or "WS: Off")
+            if Y.FloatingButtons.WS_State then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    pcall(function() LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Y.Rage.WalkSpeedValue end)
+                end
+            else
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    pcall(function() LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 end)
+                end
+            end
+        end)
+    else
+        destroy_floating_button("WS")
+    end
+
+    if Y.FloatingButtons.JP then
+        local ref = make_floating_button("JP", { pos = UDim2.new(0.02,0,0.54,0), size = UDim2.new(0,110,0,44), text = "JP" })
+        ref.btn.MouseButton1Click:Connect(function()
+            Y.FloatingButtons.JP_State = not Y.FloatingButtons.JP_State
+            ref.btn.Text = (Y.FloatingButtons.JP_State and ("JP: "..tostring(Y.Rage.JumpPowerValue)) or "JP: Off")
+            if Y.FloatingButtons.JP_State then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    pcall(function() LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = Y.Rage.JumpPowerValue end)
+                end
+            else
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    pcall(function() LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50 end)
+                end
+            end
+        end)
+    else
+        destroy_floating_button("JP")
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(1)
+    if Y.FloatingButtons.WS_State and char and char:FindFirstChildOfClass("Humanoid") then
+        pcall(function() char:FindFirstChildOfClass("Humanoid").WalkSpeed = Y.Rage.WalkSpeedValue end)
+    end
+    if Y.FloatingButtons.JP_State and char and char:FindFirstChildOfClass("Humanoid") then
+        pcall(function() char:FindFirstChildOfClass("Humanoid").JumpPower = Y.Rage.JumpPowerValue end)
+    end
+end)
+
+create_or_remove_all_floating_buttons()
+
+do
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "YounaHideUI"
+    sg.ResetOnSpawn = false
+    sg.Parent = CoreGui
+
+    local frame = Instance.new("Frame")
+    frame.Name = "HideUIFrame"
+    frame.Size = UDim2.new(0,110,0,44)
+    frame.Position = UDim2.new(0.88,0,0.02,0)
+    frame.BackgroundTransparency = 1
+    frame.Parent = sg
+    frame.Active = true
+
+    local btn = Instance.new("TextButton")
+    btn.Name = "TextButton"
+    btn.Size = UDim2.new(0,110,0,44)
+    btn.Position = UDim2.new(0,0,0,0)
+    btn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    btn.BackgroundTransparency = 0.15
+    btn.Text = "Hide UI"
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.AutoButtonColor = false
+    btn.Parent = frame
+
+    local uic = Instance.new("UICorner", btn)
+    uic.CornerRadius = UDim.new(0,12)
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = Y.visuals.chamColor or Color3.fromRGB(200,50,50)
+    stroke.Thickness = 1
+
+    btn.MouseButton1Click:Connect(function()
+        for _,g in pairs(CoreGui:GetChildren()) do
+            if g:IsA("ScreenGui") and tostring(g.Name):find("Youna") and g.Name ~= "YounaHideUI" then
+                g.Enabled = not g.Enabled
+            end
+        end
+    end)
+end
+
+
+local connections = {}
+
+if camlockConn then table.insert(connections, camlockConn) end
+if targetAimUpdater then table.insert(connections, targetAimUpdater) end
+if autoAirConn then table.insert(connections, autoAirConn) end
+
+local autoShootThread = nil
+local autoShootRunning = false
+
+local function startAutoShootLoop()
+    if autoShootRunning then return end
+    autoShootRunning = true
+    autoShootThread = task.spawn(function()
+        while autoShootRunning do
+            local delayTime = tonumber(Y.AutoShoot.fireDelay) or 0.08
+            task.wait(math.max(0.01, delayTime))
+            if not Y.AutoShoot.enabled then
+                task.wait(0.1)
+            else
+                local char = LocalPlayer.Character
+                if char and char.Parent then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        local success, err = pcall(function()
+                            if tool:FindFirstChild("Activate") and typeof(tool.Activate) == "function" then
+                                tool:Activate()
+                            else
+                                if tool.Parent then
+                                    pcall(function() tool:Activate() end)
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function stopAutoShootLoop()
+    autoShootRunning = false
+    autoShootThread = nil
+end
+
+if Y.AutoShoot and Y.AutoShoot.enabled then startAutoShootLoop() end
+
+table.insert(connections, RunService.Heartbeat:Connect(function()
+    if Y.AutoShoot and Y.AutoShoot.enabled and not autoShootRunning then
+        startAutoShootLoop()
+    elseif (not Y.AutoShoot or not Y.AutoShoot.enabled) and autoShootRunning then
+        stopAutoShootLoop()
+    end
+end))
+
+local function restoreMovementDefaults()
+    if LocalPlayer and LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            pcall(function()
+                hum.WalkSpeed = 16
+                hum.JumpPower = 50
+            end)
+        end
+    end
+end
+
+
+function getgenv().Youna_Unload()
+    stopAutoShootLoop()
+
+    Y.Camlock.enabled = false
+    Y.Targetaim.enabled = false
+    Y.AutoShoot.enabled = false
+    Y.CFrameSpeed.enabled = false
+
+    for _,c in ipairs(connections) do
+        if c and c.Disconnect then
+            pcall(function() c:Disconnect() end)
+        elseif c and type(c) == "thread" then
+        end
+    end
+    connections = {}
+
+    for k,ref in pairs(floater_refs) do
+        if ref and ref.sg then
+            pcall(function() ref.sg:Destroy() end)
+        end
+    end
+    floater_refs = {}
+
+    pcall(function()
+        local g = CoreGui:FindFirstChild("YounaHideUI")
+        if g then g:Destroy() end
+    end)
+
+    pcall(function()
+        if getgenv().Youna_Window and getgenv().Youna_Window.UIParent then
+            if getgenv().Youna_Window.destroy then
+                pcall(function() getgenv().Youna_Window:destroy() end)
+            end
+        end
+    end)
+
+    for plr,entry in pairs(espTable) do
+        pcall(function() removeESPForPlayer(plr) end)
+    end
+    espTable = {}
+
+    for _,L in pairs(cross_lines) do
+        pcall(function() L.Visible = false; L:Remove() end)
+    end
+    if cross_text then pcall(function() cross_text.Visible = false; cross_text:Remove() end) end
+
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name and tostring(obj.Name):find("YounaCham_") then
+            pcall(function() obj:Destroy() end)
+        end
+    end
+
+    restoreMovementDefaults()
+
+    health_cache = {}
+
+    getgenv().YounaExecuted = false
+    getgenv().Youna_TargetAimPosition = nil
+
+    pcall(function() print("Youna67 Unloaded") end)
+end
+
+table.insert(connections, RunService.Heartbeat:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if Y.FloatingButtons.WS_State then
+            local val = tonumber(Y.Rage and Y.Rage.WalkSpeedValue) or 16
+            if hum.WalkSpeed ~= val then pcall(function() hum.WalkSpeed = val end) end
+        end
+        if Y.FloatingButtons.JP_State then
+            local val = tonumber(Y.Rage and Y.Rage.JumpPowerValue) or 50
+            if hum.JumpPower ~= val then pcall(function() hum.JumpPower = val end) end
+        end
+    end
+end))
+
+table.insert(connections, RunService.BindToRenderStep and RunService:BindToRenderStep("Youna_AutoSave", Enum.RenderPriority.Last.Value, function()
+end) or nil)
+
+
+Y.visuals = Y.visuals or Y.visuals
+Storage = Storage or {}
+Storage.HitEffect = Storage.HitEffect or {}
+
+local function populateHitEffects()
+    pcall(function()
+        local RS = ReplicatedStorage
+        if not RS:FindFirstChild("Youna_CrescentSlash") then
+            local Insane = Instance.new("Part")
+            Insane.Name = "Youna_CrescentSlash"
+            Insane.Parent = RS
+            Insane.Anchored = true
+            Insane.Size = Vector3.new(1,1,1)
+            local Attachment = Instance.new("Attachment")
+            Attachment.Name = "Attachment"
+            Attachment.Parent = Insane
+
+            local Glow = Instance.new("ParticleEmitter")
+            Glow.Name = "Glow"
+            Glow.Lifetime = NumberRange.new(0.16, 0.16)
+            Glow.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0,1), NumberSequenceKeypoint.new(0.14,0.62), NumberSequenceKeypoint.new(1,1)})
+            Glow.Color = ColorSequence.new(Color3.fromRGB(91,177,252))
+            Glow.Speed = NumberRange.new(0,0)
+            Glow.Brightness = 5
+            Glow.Size = NumberSequence.new(9,16)
+            Glow.Enabled = false
+            Glow.Rate = 50
+            Glow.Texture = "rbxassetid://8708637750"
+            Glow.Parent = Attachment
+
+            local Shards = Instance.new("ParticleEmitter")
+            Shards.Name = "Shards"
+            Shards.Lifetime = NumberRange.new(0.19,0.7)
+            Shards.Speed = NumberRange.new(97,147)
+            Shards.Brightness = 4
+            Shards.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,0), NumberSequenceKeypoint.new(0.28,1.23), NumberSequenceKeypoint.new(1,0)})
+            Shards.Enabled = false
+            Shards.Rate = 50
+            Shards.Texture = "rbxassetid://8030734851"
+            Shards.Parent = Attachment
+
+            Storage.HitEffect["Crescent Slash"] = Attachment
+        end
+
+        if not RS:FindFirstChild("Youna_NovaImpact") then
+            local Part = Instance.new("Part")
+            Part.Name = "Youna_NovaImpact"
+            Part.Parent = RS
+            Part.Anchored = true
+            Part.Size = Vector3.new(1,1,1)
+            local Attachment = Instance.new("Attachment")
+            Attachment.Name = "Attachment"
+            Attachment.Parent = Part
+
+            local ParticleEmitter = Instance.new("ParticleEmitter")
+            ParticleEmitter.Name = "ParticleEmitter"
+            ParticleEmitter.Lifetime = NumberRange.new(0.5,0.5)
+            ParticleEmitter.LightEmission = 1
+            ParticleEmitter.LockedToPart = true
+            ParticleEmitter.Rate = 1
+            ParticleEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,1), NumberSequenceKeypoint.new(1,10)})
+            ParticleEmitter.Speed = NumberRange.new(0,0)
+            ParticleEmitter.Texture = "rbxassetid://1084991215"
+            ParticleEmitter.Enabled = false
+            ParticleEmitter.Parent = Attachment
+
+            local ParticleEmitter1 = ParticleEmitter:Clone()
+            ParticleEmitter1.Parent = Attachment
+
+            Storage.HitEffect["Nova Impact"] = Attachment
+        end
+
+        if not RS:FindFirstChild("Youna_CosmicExplosion") then
+            local Part = Instance.new("Part")
+            Part.Name = "Youna_CosmicExplosion"
+            Part.Parent = RS
+            Part.Anchored = true
+            Part.Size = Vector3.new(1,1,1)
+            local Attachment = Instance.new("Attachment")
+            Attachment.Name = "Attachment"
+            Attachment.Parent = Part
+
+            local Glow = Instance.new("ParticleEmitter")
+            Glow.Name = "Glow"
+            Glow.Lifetime = NumberRange.new(0.16,0.16)
+            Glow.Color = ColorSequence.new(Color3.fromRGB(173,82,252))
+            Glow.Enabled = false
+            Glow.Texture = "rbxassetid://8708637750"
+            Glow.Parent = Attachment
+
+            local Effect = Instance.new("ParticleEmitter")
+            Effect.Name = "Effect"
+            Effect.Lifetime = NumberRange.new(0.4,0.7)
+            Effect.LockedToPart = true
+            Effect.Enabled = false
+            Effect.Texture = "rbxassetid://9484012464"
+            Effect.Parent = Attachment
+
+            Storage.HitEffect["Cosmic Explosion"] = Attachment
+        end
+
+        if not RS:FindFirstChild("Youna_Slash") then
+            local Part = Instance.new("Part")
+            Part.Name = "Youna_Slash"
+            Part.Parent = RS
+            Part.Anchored = true
+            Part.Size = Vector3.new(1,1,1)
+            local Attachment = Instance.new("Attachment")
+            Attachment.Name = "Attachment"
+            Attachment.Parent = Part
+
+            local Crescents = Instance.new("ParticleEmitter")
+            Crescents.Name = "Crescents"
+            Crescents.Lifetime = NumberRange.new(0.19,0.38)
+            Crescents.Enabled = false
+            Crescents.Texture = "rbxassetid://12509373457"
+            Crescents.Parent = Attachment
+
+            Storage.HitEffect["Slash"] = Attachment
+        end
+
+        Storage.HitEffect["Atomic Slash"] = Storage.HitEffect["Slash"]
+        Storage.HitEffect["Coom"] = Storage.HitEffect["Slash"]
+    end)
+end
+
+populateHitEffects()
+
+pcall(function()
+    if getgenv().Youna_Window and getgenv().Youna_Window.set_theme then
+        getgenv().Youna_Window:set_theme({background = Color3.fromRGB(10,10,10), accent = Color3.fromRGB(Y.Settings.Accent.r, Y.Settings.Accent.g, Y.Settings.Accent.b)})
+    end
+end)
+
+
+
+create_or_remove_all_floating_buttons()
+
+for _,p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then makeESPForPlayer(p) end
+end
+
+task.delay(0.6, function()
+    if LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if Y.FloatingButtons.WS_State then pcall(function() hum.WalkSpeed = Y.Rage.WalkSpeedValue end) end
+            if Y.FloatingButtons.JP_State then pcall(function() hum.JumpPower = Y.Rage.JumpPowerValue end) end
+        end
+    end
+end)
+
+pcall(function()
+    print("Youna67 UI loaded. Features available:")
+    print("- Camlock (with AutoWall option)")
+    print("- TargetAim (shared target variable)")
+    print("- Randomized HitPart support")
+    print("- Orbit (rage)")
+    print("- ESP: Box, Tracer, Skeleton, Chams, Health")
+    print("- Crosshair + Title")
+    print("- Hit Effects (Crescent Slash, Nova, Cosmic, Slash) and Hit Sounds list")
+    print("- Floating Buttons: CFrame, Auto, Cam, WS, JP")
+end)
